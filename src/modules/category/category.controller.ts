@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -9,8 +9,12 @@ import { CategoryValidation } from './category.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 import { Category } from 'src/generated/prisma/client';
+import { JwtAccessAuthGuard } from '../auth/guards/jwt-access.guard';
+import { RoleGuard } from '../auth/guards/role.guard';
+import { Roles } from '../auth/decorators/role.decorator';
 
 @Controller('categories')
+@UseGuards(JwtAccessAuthGuard)
 export class CategoryController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -20,6 +24,8 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async create(
     @ZodBody(CategoryValidation.CREATE) request: CreateCategoryRequest,
   ): Promise<WebResponse<Category>> {
@@ -69,6 +75,8 @@ export class CategoryController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @ZodBody(CategoryValidation.UPDATE) request: UpdateCategoryRequest,
@@ -87,6 +95,8 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Category>> {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -9,8 +9,12 @@ import { ProductValidation } from './product.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 import { Product } from 'src/generated/prisma/client';
+import { JwtAccessAuthGuard } from '../auth/guards/jwt-access.guard';
+import { RoleGuard } from '../auth/guards/role.guard';
+import { Roles } from '../auth/decorators/role.decorator';
 
 @Controller('products')
+@UseGuards(JwtAccessAuthGuard)
 export class ProductController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -20,6 +24,8 @@ export class ProductController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async create(
     @ZodBody(ProductValidation.CREATE) request: CreateProductRequest,
   ): Promise<WebResponse<Product>> {
@@ -69,6 +75,8 @@ export class ProductController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @ZodBody(ProductValidation.UPDATE) request: UpdateProductRequest,
@@ -87,6 +95,8 @@ export class ProductController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Product>> {

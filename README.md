@@ -58,6 +58,8 @@ src/
 │   ├── auth/                # Auth module (register, login, etc.)
 │   ├── category/            # Category module (CRUD)
 │   ├── product/             # Product module (CRUD)
+│   ├── order/               # Order module (CRUD)
+│   └── payment/             # Payment module (CRUD)
 │   └── user/                # User management
 ```
 
@@ -117,6 +119,13 @@ All controller routes return responses wrapped in a standard `WebResponse` struc
 - `PATCH /api/orders/:id`: Update order (ADMIN can change status/method; USER can only change status to `CANCELED` if current status is `PENDING`, which restores stock).
 - `DELETE /api/orders/:id`: Hard delete order (ADMIN only).
 
+### 💳 Payments (`/api/payments`)
+- `POST /api/payments`: Create a new payment (USER & ADMIN). Only ADMIN or the Order Owner can make a payment.
+- `GET /api/payments`: List payments (ADMIN sees all, USER sees only their own).
+- `GET /api/payments/:id`: Get payment detail by ID (ADMIN & payment owner only).
+- `PATCH /api/payments/:id`: Update payment details (ADMIN only).
+- `DELETE /api/payments/:id`: Delete payment by ID (ADMIN only).
+
 ---
 
 ## 🧪 Testing
@@ -140,3 +149,4 @@ For manual testing, you can use the **REST Client** extension in VS Code with th
 - [http/categories.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/categories.http) - Category CRUD requests.
 - [http/products.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/products.http) - Product CRUD requests.
 - [http/orders.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/orders.http) - Order CRUD & status tracking requests.
+- [http/payments.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/payments.http) - Payment CRUD & transaction tracking requests.

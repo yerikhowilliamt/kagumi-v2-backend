@@ -23,6 +23,7 @@ describe('API Flow with Real Database (e2e)', () => {
   let testUserId: number;
   let productId: number;
   let orderId: number;
+  let paymentId: number;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -339,6 +340,110 @@ describe('API Flow with Real Database (e2e)', () => {
 
           expect(res.body.success).toBe(true);
           expect(res.body.data.id).toBe(orderId);
+        });
+
+        describe('Payment Flow inside Order', () => {
+          it('POST /api/payments - success', async () => {
+            const res = await request(app.getHttpServer())
+              .post('/api/payments')
+              .set('Cookie', userCookie)
+              .send({
+                orderId: orderId,
+                transactionId: `TX_REAL_${Date.now()}`,
+                amount: 50.00,
+                paymentMethod: 'TRANSFER',
+              })
+              .expect(HttpStatus.CREATED);
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.id).toBeDefined();
+            paymentId = res.body.data.id;
+          });
+
+          it('GET /api/payments - success', async () => {
+            const res = await request(app.getHttpServer())
+              .get('/api/payments')
+              .set('Cookie', userCookie)
+              .expect(HttpStatus.OK);
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.length).toBeGreaterThan(0);
+          });
+
+          it('GET /api/payments/:id - success', async () => {
+            const res = await request(app.getHttpServer())
+              .get(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .expect(HttpStatus.OK);
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.id).toBe(paymentId);
+          });
+
+          it('PATCH /api/payments/:id - forbidden as USER', async () => {
+            await request(app.getHttpServer())
+              .patch(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .send({ status: 'SETTLEMENT' })
+              .expect(HttpStatus.FORBIDDEN);
+          });
+
+          it('PATCH /api/payments/:id - success as ADMIN', async () => {
+            // Elevate to ADMIN
+            await prismaService.user.update({
+              where: { email: testEmail },
+              data: { role: 'ADMIN' },
+            });
+
+            const res = await request(app.getHttpServer())
+              .patch(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .send({ status: 'SETTLEMENT' })
+              .expect(HttpStatus.OK);
+
+            expect(res.body.success).toBe(true);
+            expect(res.body.data.status).toBe('SETTLEMENT');
+
+            // Demote to USER
+            await prismaService.user.update({
+              where: { email: testEmail },
+              data: { role: 'USER' },
+            });
+          });
+
+          it('DELETE /api/payments/:id - forbidden as USER', async () => {
+            await request(app.getHttpServer())
+              .delete(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .expect(HttpStatus.FORBIDDEN);
+          });
+
+          it('DELETE /api/payments/:id - success as ADMIN', async () => {
+            // Elevate to ADMIN
+            await prismaService.user.update({
+              where: { email: testEmail },
+              data: { role: 'ADMIN' },
+            });
+
+            await request(app.getHttpServer())
+              .delete(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .expect(HttpStatus.OK);
+
+            // Verify payment deleted
+            await request(app.getHttpServer())
+              .get(`/api/payments/${paymentId}`)
+              .set('Cookie', userCookie)
+              .expect(HttpStatus.NOT_FOUND);
+
+            // Demote to USER
+            await prismaService.user.update({
+              where: { email: testEmail },
+              data: { role: 'USER' },
+            });
+
+            paymentId = null;
+          });
         });
 
         it('PATCH /api/orders/:id - success (cancel)', async () => {

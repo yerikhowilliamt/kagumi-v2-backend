@@ -1,0 +1,31 @@
+### 1. Create a New Product (Ganti categoryId dengan id category yang ada)
+POST http://localhost:4015/api/products
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "name": "Sourdough Bread",
+  "description": "Freshly baked artisan sourdough bread",
+  "price": 45000,
+  "type": "DAILY_BAKE",
+  "stock": 20
+}
+
+### 2. Get All Products
+GET http://localhost:4015/api/products
+
+### 3. Get Product by ID (Ganti ID sesuai dengan hasil create)
+GET http://localhost:4015/api/products/1
+
+### 4. Update Product (Ganti ID sesuai kebutuhan)
+PATCH http://localhost:4015/api/products/1
+Content-Type: application/json
+
+{
+  "name": "Artisan Sourdough Bread",
+  "price": 48000,
+  "stock": 15
+}
+
+### 5. Delete Product (Ganti ID sesuai kebutuhan)
+DELETE http://localhost:4015/api/products/1

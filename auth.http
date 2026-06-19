@@ -1,0 +1,24 @@
+### 1. Register User
+POST http://localhost:4015/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson",
+  "email": "alex.johnson@example.com",
+  "password": "Password123",
+  "phone": "+628123456789",
+  "address": "Rosewood Street No. 4"
+}
+
+### 2. Login User
+# @name login
+POST http://localhost:4015/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "alex.johnson@example.com",
+  "password": "Password123"
+}
+
+### 3. Generate New Access Token (menggunakan refresh token dari cookie)
+POST http://localhost:4015/api/auth/new-token

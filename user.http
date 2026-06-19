@@ -1,0 +1,27 @@
+### 1. Get Current User Profile (Memerlukan login terlebih dahulu agar Cookie access_token otomatis terkirim)
+GET http://localhost:4015/api/users/current
+
+### 2. Update Profile Current User
+PATCH http://localhost:4015/api/users/current/profile
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson Updated",
+  "address": "Maple Street No. 99"
+}
+
+### 3. Update Password Current User
+PATCH http://localhost:4015/api/users/current/password
+Content-Type: application/json
+
+{
+  "currentPassword": "Password123",
+  "password": "Newpassword123",
+  "confirmPassword": "Newpassword123"
+}
+
+### 4. Get User List (Hanya ADMIN. Ubah role user di DB terlebih dahulu jika ingin mencoba)
+GET http://localhost:4015/api/users
+
+### 5. Logout User
+DELETE http://localhost:4015/api/users/logout

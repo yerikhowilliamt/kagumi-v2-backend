@@ -1,0 +1,58 @@
+### 1. Login User (Untuk mendapatkan cookie access_token dan refresh_token)
+POST http://localhost:4015/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "password": "Password123"
+}
+
+### 2. Create a New Order (Hanya bisa role USER. Ganti productId dengan id product yang ada)
+POST http://localhost:4015/api/orders
+Content-Type: application/json
+
+{
+  "deliveryMethod": "DELIVERY",
+  "paymentMethod": "TRANSFER",
+  "items": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "note": "Kirim pagi hari ya"
+    }
+  ]
+}
+
+### 3. Get All Orders (Untuk role USER mendapatkan order miliknya saja, untuk role ADMIN mendapatkan semua order)
+GET http://localhost:4015/api/orders
+
+### 4. Get Order by ID (Ganti ID sesuai dengan hasil create)
+GET http://localhost:4015/api/orders/1
+
+### 5. Cancel Order (Hanya bisa role USER untuk status PENDING. Ganti ID sesuai kebutuhan)
+PATCH http://localhost:4015/api/orders/1
+Content-Type: application/json
+
+{
+  "status": "CANCELED"
+}
+
+### 6. Login Admin (Untuk melakukan update status atau menghapus order)
+POST http://localhost:4015/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mail.com",
+  "password": "Password123"
+}
+
+### 7. Update Order Status (Hanya bisa role ADMIN)
+PATCH http://localhost:4015/api/orders/1
+Content-Type: application/json
+
+{
+  "status": "PAID"
+}
+
+### 8. Delete Order (Hanya bisa role ADMIN)
+DELETE http://localhost:4015/api/orders/1

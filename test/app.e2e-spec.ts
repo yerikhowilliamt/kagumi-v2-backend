@@ -10,6 +10,8 @@ import cookieParser = require('cookie-parser');
 describe('API Flow (e2e)', () => {
   let app: INestApplication<App>;
   let prismaService: PrismaService;
+  let globalAdminCookie: string[];
+  let globalUserCookie: string[];
 
   const passwordPlain = 'Password123';
   const hashedPassword = bcrypt.hashSync(passwordPlain, 10);
@@ -64,6 +66,22 @@ describe('API Flow (e2e)', () => {
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
+
+    // Login Admin
+    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+    jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+    const adminRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ email: 'admin@mail.com', password: passwordPlain });
+    globalAdminCookie = adminRes.headers['set-cookie'];
+
+    // Login User
+    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+    jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+    const userRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ email: 'user@mail.com', password: passwordPlain });
+    globalUserCookie = userRes.headers['set-cookie'];
   });
 
   afterAll(async () => {
@@ -214,6 +232,9 @@ describe('API Flow (e2e)', () => {
   });
 
   describe('Category Endpoints', () => {
+    let adminCookie: string[];
+    let userCookie: string[];
+
     const mockCategory = {
       id: 10,
       name: 'Electronics',
@@ -225,12 +246,32 @@ describe('API Flow (e2e)', () => {
       products: [],
     };
 
+    beforeAll(async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+
+      const adminLoginRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminLoginRes.headers['set-cookie'];
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+
+      const userLoginRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userLoginRes.headers['set-cookie'];
+    });
+
     it('POST /api/categories - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValueOnce(null);
       jest.spyOn(prismaService.category, 'create').mockResolvedValue(mockCategory as any);
 
       return request(app.getHttpServer())
         .post('/api/categories')
+        .set('Cookie', adminCookie)
         .send({
           name: 'Electronics',
           description: 'Electronic things',
@@ -243,10 +284,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/categories - fail (duplicate name)', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
 
       return request(app.getHttpServer())
         .post('/api/categories')
+        .set('Cookie', adminCookie)
         .send({
           name: 'Electronics',
           description: 'Electronic things',
@@ -258,10 +301,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/categories - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
       jest.spyOn(prismaService.category, 'findMany').mockResolvedValue([mockCategory] as any);
 
       return request(app.getHttpServer())
         .get('/api/categories')
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -270,10 +315,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
 
       return request(app.getHttpServer())
         .get('/api/categories/10')
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -282,6 +329,7 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique')
         .mockResolvedValueOnce(mockCategory as any)
         .mockResolvedValueOnce(null);
@@ -292,6 +340,7 @@ describe('API Flow (e2e)', () => {
 
       return request(app.getHttpServer())
         .patch('/api/categories/10')
+        .set('Cookie', adminCookie)
         .send({
           name: 'Updated Electronics',
         })
@@ -303,6 +352,7 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue({
         ...mockCategory,
         children: [],
@@ -312,6 +362,7 @@ describe('API Flow (e2e)', () => {
 
       return request(app.getHttpServer())
         .delete('/api/categories/10')
+        .set('Cookie', adminCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -320,6 +371,9 @@ describe('API Flow (e2e)', () => {
   });
 
   describe('Product Endpoints', () => {
+    let adminCookie: string[];
+    let userCookie: string[];
+
     const mockCategory = {
       id: 5,
       name: 'Baking',
@@ -341,13 +395,32 @@ describe('API Flow (e2e)', () => {
       updatedAt: new Date(),
       category: mockCategory,
     };
+    beforeAll(async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+
+      const adminLoginRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminLoginRes.headers['set-cookie'];
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+
+      const userLoginRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userLoginRes.headers['set-cookie'];
+    });
 
     it('POST /api/products - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
       jest.spyOn(prismaService.product, 'create').mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .post('/api/products')
+        .set('Cookie', adminCookie)
         .send({
           categoryId: 5,
           name: 'Premium Flour',
@@ -364,10 +437,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/products - fail (invalid category)', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(null);
 
       return request(app.getHttpServer())
         .post('/api/products')
+        .set('Cookie', adminCookie)
         .send({
           categoryId: 999,
           name: 'Premium Flour',
@@ -380,10 +455,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/products - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
       jest.spyOn(prismaService.product, 'findMany').mockResolvedValue([mockProduct] as any);
 
       return request(app.getHttpServer())
         .get('/api/products')
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -392,10 +469,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .get('/api/products/20')
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);
@@ -404,6 +483,7 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({
         ...mockProduct,
@@ -412,6 +492,7 @@ describe('API Flow (e2e)', () => {
 
       return request(app.getHttpServer())
         .patch('/api/products/20')
+        .set('Cookie', adminCookie)
         .send({
           name: 'Updated Flour',
         })
@@ -423,11 +504,170 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
       jest.spyOn(prismaService.product, 'delete').mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .delete('/api/products/20')
+        .set('Cookie', adminCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
+
+  describe('Order Endpoints', () => {
+    let userCookie: string[];
+    let adminCookie: string[];
+
+    const mockProduct = {
+      id: 1,
+      categoryId: 1,
+      name: 'Loaf of Bread',
+      description: 'Fresh loaf',
+      price: 25.00,
+      type: 'REGULAR',
+      stock: 10,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockOrder = {
+      id: 50,
+      userId: 2,
+      totalPrice: 50.00,
+      status: 'PENDING',
+      deliveryMethod: 'DELIVERY',
+      paymentMethod: 'TRANSFER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      orderItems: [
+        {
+          id: 1,
+          orderId: 50,
+          productId: 1,
+          quantity: 2,
+          priceEach: 25.00,
+          note: 'Fresh please',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          product: mockProduct,
+        },
+      ],
+      user: {
+        id: 2,
+        name: 'Normal User',
+        email: 'user@mail.com',
+      },
+    };
+
+    beforeAll(async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      const userRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userRes.headers['set-cookie'];
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      const adminRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminRes.headers['set-cookie'];
+    });
+
+    it('POST /api/orders - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService.order, 'create').mockResolvedValue({ id: 50 } as any);
+      jest.spyOn(prismaService.orderItem, 'create').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .post('/api/orders')
+        .set('Cookie', userCookie)
+        .send({
+          deliveryMethod: 'DELIVERY',
+          paymentMethod: 'TRANSFER',
+          items: [{ productId: 1, quantity: 2, note: 'Fresh please' }],
+        })
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(50);
+        });
+    });
+
+    it('GET /api/orders - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.order, 'findMany').mockResolvedValue([mockOrder] as any);
+
+      return request(app.getHttpServer())
+        .get('/api/orders')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/orders/:id - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .get('/api/orders/50')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(50);
+        });
+    });
+
+    it('PATCH /api/orders/:id - user cancel success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.order, 'findUnique')
+        .mockResolvedValueOnce(mockOrder as any)
+        .mockResolvedValueOnce({ ...mockOrder, status: 'CANCELED' } as any);
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.order, 'update').mockResolvedValue({ ...mockOrder, status: 'CANCELED' } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/orders/50')
+        .set('Cookie', userCookie)
+        .send({ status: 'CANCELED' })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.status).toBe('CANCELED');
+        });
+    });
+
+    it('DELETE /api/orders/:id - fail as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/orders/50')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('DELETE /api/orders/:id - success as admin', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+      jest.spyOn(prismaService.order, 'delete').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/orders/50')
+        .set('Cookie', adminCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {
           expect(res.body.success).toBe(true);

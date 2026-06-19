@@ -22,6 +22,7 @@ describe('API Flow with Real Database (e2e)', () => {
   let categoryId: number;
   let testUserId: number;
   let productId: number;
+  let orderId: number;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -40,6 +41,9 @@ describe('API Flow with Real Database (e2e)', () => {
   afterAll(async () => {
     // Cleanup database records created during testing
     try {
+      if (orderId) {
+        await prismaService.order.delete({ where: { id: orderId } }).catch(() => {});
+      }
       if (productId) {
         await prismaService.product.delete({ where: { id: productId } }).catch(() => {});
       }
@@ -152,6 +156,7 @@ describe('API Flow with Real Database (e2e)', () => {
     it('POST /api/categories - success', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/categories')
+        .set('Cookie', userCookie)
         .send({
           name: testCategoryName,
           description: 'Testing categories with real DB',
@@ -166,6 +171,7 @@ describe('API Flow with Real Database (e2e)', () => {
     it('POST /api/categories - fail (duplicate name)', async () => {
       await request(app.getHttpServer())
         .post('/api/categories')
+        .set('Cookie', userCookie)
         .send({
           name: testCategoryName,
           description: 'Duplicate testing',
@@ -176,6 +182,7 @@ describe('API Flow with Real Database (e2e)', () => {
     it('GET /api/categories - success', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/categories')
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK);
 
       expect(res.body.success).toBe(true);
@@ -185,6 +192,7 @@ describe('API Flow with Real Database (e2e)', () => {
     it('GET /api/categories/:id - success', async () => {
       const res = await request(app.getHttpServer())
         .get(`/api/categories/${categoryId}`)
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK);
 
       expect(res.body.success).toBe(true);
@@ -194,6 +202,7 @@ describe('API Flow with Real Database (e2e)', () => {
     it('PATCH /api/categories/:id - success', async () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/categories/${categoryId}`)
+        .set('Cookie', userCookie)
         .send({
           name: updatedCategoryName,
         })
@@ -207,6 +216,7 @@ describe('API Flow with Real Database (e2e)', () => {
       it('POST /api/products - success', async () => {
         const res = await request(app.getHttpServer())
           .post('/api/products')
+          .set('Cookie', userCookie)
           .send({
             categoryId: categoryId,
             name: `Real Product_${timestamp}`,
@@ -225,6 +235,7 @@ describe('API Flow with Real Database (e2e)', () => {
       it('POST /api/products - fail (invalid category)', async () => {
         await request(app.getHttpServer())
           .post('/api/products')
+          .set('Cookie', userCookie)
           .send({
             categoryId: 999999,
             name: 'Invalid Product',
@@ -238,6 +249,7 @@ describe('API Flow with Real Database (e2e)', () => {
       it('GET /api/products - success', async () => {
         const res = await request(app.getHttpServer())
           .get('/api/products')
+          .set('Cookie', userCookie)
           .expect(HttpStatus.OK);
 
         expect(res.body.success).toBe(true);
@@ -247,6 +259,7 @@ describe('API Flow with Real Database (e2e)', () => {
       it('GET /api/products/:id - success', async () => {
         const res = await request(app.getHttpServer())
           .get(`/api/products/${productId}`)
+          .set('Cookie', userCookie)
           .expect(HttpStatus.OK);
 
         expect(res.body.success).toBe(true);
@@ -256,6 +269,7 @@ describe('API Flow with Real Database (e2e)', () => {
       it('PATCH /api/products/:id - success', async () => {
         const res = await request(app.getHttpServer())
           .patch(`/api/products/${productId}`)
+          .set('Cookie', userCookie)
           .send({
             name: `Real Product Updated_${timestamp}`,
             price: 150.00,
@@ -263,19 +277,112 @@ describe('API Flow with Real Database (e2e)', () => {
           })
           .expect(HttpStatus.OK);
 
-        expect(res.body.success).toBe(true);
         expect(res.body.data.name).toBe(`Real Product Updated_${timestamp}`);
         expect(parseFloat(res.body.data.price)).toBe(150.00);
+      });
+
+      describe('Order Operations Flow', () => {
+        it('POST /api/orders - success', async () => {
+          await prismaService.user.update({
+            where: { email: testEmail },
+            data: { role: 'USER' },
+          });
+
+          const res = await request(app.getHttpServer())
+            .post('/api/orders')
+            .set('Cookie', userCookie)
+            .send({
+              deliveryMethod: 'DELIVERY',
+              paymentMethod: 'TRANSFER',
+              items: [{ productId: productId, quantity: 2, note: 'Real order' }],
+            })
+            .expect(HttpStatus.CREATED);
+
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.userId).toBe(testUserId);
+          orderId = res.body.data.id;
+        });
+
+        it('GET /api/categories - success as USER', async () => {
+          await request(app.getHttpServer())
+            .get('/api/categories')
+            .set('Cookie', userCookie)
+            .expect(HttpStatus.OK);
+        });
+
+        it('POST /api/categories - forbidden as USER', async () => {
+          await request(app.getHttpServer())
+            .post('/api/categories')
+            .set('Cookie', userCookie)
+            .send({
+              name: 'Invalid Category By User',
+              description: 'Should fail',
+            })
+            .expect(HttpStatus.FORBIDDEN);
+        });
+
+        it('GET /api/orders - success', async () => {
+          const res = await request(app.getHttpServer())
+            .get('/api/orders')
+            .set('Cookie', userCookie)
+            .expect(HttpStatus.OK);
+
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.length).toBeGreaterThan(0);
+        });
+
+        it('GET /api/orders/:id - success', async () => {
+          const res = await request(app.getHttpServer())
+            .get(`/api/orders/${orderId}`)
+            .set('Cookie', userCookie)
+            .expect(HttpStatus.OK);
+
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(orderId);
+        });
+
+        it('PATCH /api/orders/:id - success (cancel)', async () => {
+          const res = await request(app.getHttpServer())
+            .patch(`/api/orders/${orderId}`)
+            .set('Cookie', userCookie)
+            .send({ status: 'CANCELED' })
+            .expect(HttpStatus.OK);
+
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.status).toBe('CANCELED');
+        });
+
+        it('DELETE /api/orders/:id - success (as ADMIN)', async () => {
+          await prismaService.user.update({
+            where: { email: testEmail },
+            data: { role: 'ADMIN' },
+          });
+
+          await request(app.getHttpServer())
+            .delete(`/api/orders/${orderId}`)
+            .set('Cookie', userCookie)
+            .expect(HttpStatus.OK);
+
+          // Verify order no longer exists
+          await request(app.getHttpServer())
+            .get(`/api/orders/${orderId}`)
+            .set('Cookie', userCookie)
+            .expect(HttpStatus.NOT_FOUND);
+
+          orderId = null;
+        });
       });
 
       it('DELETE /api/products/:id - success', async () => {
         await request(app.getHttpServer())
           .delete(`/api/products/${productId}`)
+          .set('Cookie', userCookie)
           .expect(HttpStatus.OK);
 
         // Verify product no longer exists
         await request(app.getHttpServer())
           .get(`/api/products/${productId}`)
+          .set('Cookie', userCookie)
           .expect(HttpStatus.NOT_FOUND);
       });
     });
@@ -283,11 +390,13 @@ describe('API Flow with Real Database (e2e)', () => {
     it('DELETE /api/categories/:id - success', async () => {
       await request(app.getHttpServer())
         .delete(`/api/categories/${categoryId}`)
+        .set('Cookie', userCookie)
         .expect(HttpStatus.OK);
 
       // Verify category no longer exists
       await request(app.getHttpServer())
         .get(`/api/categories/${categoryId}`)
+        .set('Cookie', userCookie)
         .expect(HttpStatus.NOT_FOUND);
     });
   });

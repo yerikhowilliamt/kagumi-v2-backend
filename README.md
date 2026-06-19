@@ -97,18 +97,25 @@ All controller routes return responses wrapped in a standard `WebResponse` struc
 - `DELETE /api/users/logout`: Clear JWT session cookies.
 
 ### 📁 Categories (`/api/categories`)
-- `POST /api/categories`: Create a new category.
-- `GET /api/categories`: List all categories.
-- `GET /api/categories/:id`: Get category detail by ID.
-- `PATCH /api/categories/:id`: Update category by ID.
-- `DELETE /api/categories/:id`: Delete category by ID (Restricted if it contains child categories or products).
+- `POST /api/categories`: Create a new category (ADMIN only).
+- `GET /api/categories`: List all categories (ADMIN & USER).
+- `GET /api/categories/:id`: Get category detail by ID (ADMIN & USER).
+- `PATCH /api/categories/:id`: Update category by ID (ADMIN only).
+- `DELETE /api/categories/:id`: Delete category by ID (ADMIN only, restricted if it contains child categories or products).
 
 ### 🏷️ Products (`/api/products`)
-- `POST /api/products`: Create a new product.
-- `GET /api/products`: List all products.
-- `GET /api/products/:id`: Get product detail by ID.
-- `PATCH /api/products/:id`: Update product details.
-- `DELETE /api/products/:id`: Delete product by ID.
+- `POST /api/products`: Create a new product (ADMIN only).
+- `GET /api/products`: List all products (ADMIN & USER).
+- `GET /api/products/:id`: Get product detail by ID (ADMIN & USER).
+- `PATCH /api/products/:id`: Update product details (ADMIN only).
+- `DELETE /api/products/:id`: Delete product by ID (ADMIN only).
+
+### 📦 Orders (`/api/orders`)
+- `POST /api/orders`: Create a new order (USER only). Calculates price automatically and reduces product stocks inside transaction.
+- `GET /api/orders`: List orders (ADMIN sees all, USER sees only their own).
+- `GET /api/orders/:id`: Get order detail by ID (ADMIN & order owner only).
+- `PATCH /api/orders/:id`: Update order (ADMIN can change status/method; USER can only change status to `CANCELED` if current status is `PENDING`, which restores stock).
+- `DELETE /api/orders/:id`: Hard delete order (ADMIN only).
 
 ---
 
@@ -132,3 +139,4 @@ For manual testing, you can use the **REST Client** extension in VS Code with th
 - [http/user.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/user.http) - User management & profile testing.
 - [http/categories.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/categories.http) - Category CRUD requests.
 - [http/products.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/products.http) - Product CRUD requests.
+- [http/orders.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/orders.http) - Order CRUD & status tracking requests.

@@ -6,7 +6,7 @@ import { LoggerService } from 'src/common/logger/logger.service';
 
 @Injectable()
 export class CryptoService {
-    constructor(
+  constructor(
     private readonly config: ConfigService,
     private readonly loggerService: LoggerService,
   ) {}
@@ -35,14 +35,14 @@ export class CryptoService {
     console.log('KEY:', this.config.get('CRYPTO_SECRET_KEY'));
 
     if (secretKey.length !== 32) {
-        this.loggerService.warn(
-          'AUTH',
-          'SERVICE',
-          'Encrypt token failed - Secret key must be 32 bytes for AES-256',
-          {
-            secretKey_length: secretKey.length,
-          },
-        );
+      this.loggerService.warn(
+        'AUTH',
+        'SERVICE',
+        'Encrypt token failed - Secret key must be 32 bytes for AES-256',
+        {
+          secretKey_length: secretKey.length,
+        },
+      );
       throw new Error('Secret key must be 32 bytes for AES-256');
     }
 

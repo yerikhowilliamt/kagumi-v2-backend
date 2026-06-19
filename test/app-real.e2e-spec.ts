@@ -42,16 +42,24 @@ describe('API Flow with Real Database (e2e)', () => {
     // Cleanup database records created during testing
     try {
       if (orderId) {
-        await prismaService.order.delete({ where: { id: orderId } }).catch(() => {});
+        await prismaService.order
+          .delete({ where: { id: orderId } })
+          .catch(() => {});
       }
       if (productId) {
-        await prismaService.product.delete({ where: { id: productId } }).catch(() => {});
+        await prismaService.product
+          .delete({ where: { id: productId } })
+          .catch(() => {});
       }
       if (categoryId) {
-        await prismaService.category.delete({ where: { id: categoryId } }).catch(() => {});
+        await prismaService.category
+          .delete({ where: { id: categoryId } })
+          .catch(() => {});
       }
       if (testEmail) {
-        await prismaService.user.delete({ where: { email: testEmail } }).catch(() => {});
+        await prismaService.user
+          .delete({ where: { email: testEmail } })
+          .catch(() => {});
       }
     } catch (err) {
       console.error('Cleanup error:', err);
@@ -221,7 +229,7 @@ describe('API Flow with Real Database (e2e)', () => {
             categoryId: categoryId,
             name: `Real Product_${timestamp}`,
             description: 'Testing product with real DB',
-            price: 120.50,
+            price: 120.5,
             type: 'REGULAR',
             stock: 50,
           })
@@ -272,13 +280,13 @@ describe('API Flow with Real Database (e2e)', () => {
           .set('Cookie', userCookie)
           .send({
             name: `Real Product Updated_${timestamp}`,
-            price: 150.00,
+            price: 150.0,
             stock: 40,
           })
           .expect(HttpStatus.OK);
 
         expect(res.body.data.name).toBe(`Real Product Updated_${timestamp}`);
-        expect(parseFloat(res.body.data.price)).toBe(150.00);
+        expect(parseFloat(res.body.data.price)).toBe(150.0);
       });
 
       describe('Order Operations Flow', () => {
@@ -294,7 +302,9 @@ describe('API Flow with Real Database (e2e)', () => {
             .send({
               deliveryMethod: 'DELIVERY',
               paymentMethod: 'TRANSFER',
-              items: [{ productId: productId, quantity: 2, note: 'Real order' }],
+              items: [
+                { productId: productId, quantity: 2, note: 'Real order' },
+              ],
             })
             .expect(HttpStatus.CREATED);
 

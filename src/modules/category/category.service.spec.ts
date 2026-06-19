@@ -55,29 +55,42 @@ describe('CategoryService', () => {
 
   describe('create', () => {
     it('should throw BadRequestException if category name already exists', async () => {
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory);
-      await expect(service.create({ name: 'Electronics', description: 'desc' })).rejects.toThrow(
-        BadRequestException,
-      );
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
+      await expect(
+        service.create({ name: 'Electronics', description: 'desc' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw NotFoundException if parent category does not exist', async () => {
-      jest.spyOn(prismaService.category, 'findUnique')
+      jest
+        .spyOn(prismaService.category, 'findUnique')
         .mockResolvedValueOnce(null) // for name
         .mockResolvedValueOnce(null); // for parentId
 
-      await expect(service.create({ name: 'Laptops', description: 'desc', parentId: 99 })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.create({ name: 'Laptops', description: 'desc', parentId: 99 }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should create a category successfully', async () => {
-      jest.spyOn(prismaService.category, 'findUnique')
+      jest
+        .spyOn(prismaService.category, 'findUnique')
         .mockResolvedValueOnce(null) // name
         .mockResolvedValueOnce(mockCategory); // parent
-      jest.spyOn(prismaService.category, 'create').mockResolvedValue({ ...mockCategory, id: 2, parentId: 1, name: 'Laptops' });
+      jest.spyOn(prismaService.category, 'create').mockResolvedValue({
+        ...mockCategory,
+        id: 2,
+        parentId: 1,
+        name: 'Laptops',
+      });
 
-      const result = await service.create({ name: 'Laptops', description: 'desc', parentId: 1 });
+      const result = await service.create({
+        name: 'Laptops',
+        description: 'desc',
+        parentId: 1,
+      });
       expect(result.id).toBe(2);
       expect(result.parentId).toBe(1);
     });
@@ -85,7 +98,9 @@ describe('CategoryService', () => {
 
   describe('findAll', () => {
     it('should return all categories', async () => {
-      jest.spyOn(prismaService.category, 'findMany').mockResolvedValue([mockCategory]);
+      jest
+        .spyOn(prismaService.category, 'findMany')
+        .mockResolvedValue([mockCategory]);
       const result = await service.findAll();
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Electronics');
@@ -99,7 +114,9 @@ describe('CategoryService', () => {
     });
 
     it('should return category if found', async () => {
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
       const result = await service.findById(1);
       expect(result.name).toBe('Electronics');
     });
@@ -107,22 +124,32 @@ describe('CategoryService', () => {
 
   describe('update', () => {
     it('should throw BadRequestException if category is its own parent', async () => {
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory);
-      await expect(service.update(1, { parentId: 1 })).rejects.toThrow(BadRequestException);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
+      await expect(service.update(1, { parentId: 1 })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException if name already exists in another category', async () => {
-      jest.spyOn(prismaService.category, 'findUnique')
+      jest
+        .spyOn(prismaService.category, 'findUnique')
         .mockResolvedValueOnce(mockCategory) // for get existing category in findById
         .mockResolvedValueOnce({ ...mockCategory, id: 2, name: 'Gadgets' }); // for unique name check
 
-      await expect(service.update(1, { name: 'Gadgets' })).rejects.toThrow(BadRequestException);
+      await expect(service.update(1, { name: 'Gadgets' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should update successfully', async () => {
-      jest.spyOn(prismaService.category, 'findUnique')
+      jest
+        .spyOn(prismaService.category, 'findUnique')
         .mockResolvedValueOnce(mockCategory); // findById
-      jest.spyOn(prismaService.category, 'update').mockResolvedValue({ ...mockCategory, name: 'Updated' });
+      jest
+        .spyOn(prismaService.category, 'update')
+        .mockResolvedValue({ ...mockCategory, name: 'Updated' });
 
       const result = await service.update(1, { name: 'Updated' });
       expect(result.name).toBe('Updated');
@@ -161,7 +188,9 @@ describe('CategoryService', () => {
         children: [],
         products: [],
       } as any);
-      jest.spyOn(prismaService.category, 'delete').mockResolvedValue(mockCategory);
+      jest
+        .spyOn(prismaService.category, 'delete')
+        .mockResolvedValue(mockCategory);
 
       const result = await service.remove(1);
       expect(result.id).toBe(1);

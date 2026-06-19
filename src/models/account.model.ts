@@ -19,7 +19,8 @@ export class AccountResponse {
     createdAt: string;
     updatedAt: string;
   }) {
-    const {id, userId, provider, providerAccountId, createdAt, updatedAt} = params;
+    const { id, userId, provider, providerAccountId, createdAt, updatedAt } =
+      params;
     this.id = id;
     this.userId = userId;
     this.provider = provider;

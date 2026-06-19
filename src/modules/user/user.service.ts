@@ -1,4 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -6,13 +13,19 @@ import { AuthService } from '../auth/auth.service';
 import WebResponse, { Paging, response } from 'src/models/web.model';
 import { UserResponse } from 'src/models/user.model';
 import { UpdateProfileRequest } from './dto/update-profile.dto';
-import { Account, Order, Payment, Prisma, User } from 'src/generated/prisma/client';
+import {
+  Account,
+  Order,
+  Payment,
+  Prisma,
+  User,
+} from 'src/generated/prisma/client';
 import { UpdatePasswordRequest } from './dto/update-password.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
-    constructor(
+  constructor(
     private readonly loggerService: LoggerService,
     private readonly prismaService: PrismaService,
     private readonly responseService: ResponseService,
@@ -26,10 +39,7 @@ export class UserService {
     payments: true,
   };
 
-  async list(
-    limit: number,
-    page: number,
-  ): Promise<WebResponse<UserResponse>> {
+  async list(limit: number, page: number): Promise<WebResponse<UserResponse>> {
     this.loggerService.info('USER', 'SERVICE', 'Fetching users data initiated');
 
     const skip = (page - 1) * limit;
@@ -93,7 +103,7 @@ export class UserService {
       where: {
         id: userId,
       },
-    })
+    });
 
     if (updateRequest.phone) {
       const existingPhone = await this.prismaService.user.findUnique({
@@ -102,10 +112,8 @@ export class UserService {
         },
       });
 
-      if (existingPhone && existingPhone.phone !== (user && user.phone)) 
-        throw new BadRequestException(
-          'Phone number already registered',
-        );
+      if (existingPhone && existingPhone.phone !== (user && user.phone))
+        throw new BadRequestException('Phone number already registered');
     }
 
     if (updateRequest.email) {
@@ -207,7 +215,6 @@ export class UserService {
 
     return this.responseService.toAuthResponse(updatedUser);
   }
-
 
   async logout(email: string): Promise<{ message: string; success: boolean }> {
     this.loggerService.info('USER', 'SERVICE', 'User logout initiated');

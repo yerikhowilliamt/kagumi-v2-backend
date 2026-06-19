@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -29,11 +40,21 @@ export class ProductController {
   async create(
     @ZodBody(ProductValidation.CREATE) request: CreateProductRequest,
   ): Promise<WebResponse<Product>> {
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Create product request received', { name: request.name });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Create product request received',
+      { name: request.name },
+    );
     const result = await this.productService.create(request);
     const message = generateMessage({ action: 'create', subject: 'product' });
 
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Product created successfully', { id: result.id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Product created successfully',
+      { id: result.id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.CREATED,
@@ -44,11 +65,20 @@ export class ProductController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<WebResponse<Product[]>> {
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Fetch all products request received');
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Fetch all products request received',
+    );
     const result = await this.productService.findAll();
     const message = generateMessage({ action: 'fetch', subject: 'product' });
 
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Products fetched successfully', { count: result.length });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Products fetched successfully',
+      { count: result.length },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -61,11 +91,21 @@ export class ProductController {
   async findById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Product>> {
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Fetch product by id request received', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Fetch product by id request received',
+      { id },
+    );
     const result = await this.productService.findById(id);
     const message = generateMessage({ action: 'fetch', subject: 'product' });
 
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Product fetched successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Product fetched successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -81,11 +121,21 @@ export class ProductController {
     @Param('id', ParseIntPipe) id: number,
     @ZodBody(ProductValidation.UPDATE) request: UpdateProductRequest,
   ): Promise<WebResponse<Product>> {
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Update product request received', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Update product request received',
+      { id },
+    );
     const result = await this.productService.update(id, request);
     const message = generateMessage({ action: 'update', subject: 'product' });
 
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Product updated successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Product updated successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -100,11 +150,21 @@ export class ProductController {
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Product>> {
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Delete product request received', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Delete product request received',
+      { id },
+    );
     const result = await this.productService.remove(id);
     const message = generateMessage({ action: 'delete', subject: 'product' });
 
-    this.loggerService.info('PRODUCT', 'CONTROLLER', 'Product deleted successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'CONTROLLER',
+      'Product deleted successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,

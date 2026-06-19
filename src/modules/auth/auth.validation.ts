@@ -1,4 +1,4 @@
-import { z } from "zod/v3";
+import { z } from 'zod/v3';
 
 export class AuthValidation {
   static readonly REGISTER = z.object({

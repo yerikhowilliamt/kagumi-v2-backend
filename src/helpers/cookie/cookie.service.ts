@@ -4,7 +4,7 @@ import { Response } from 'express';
 
 @Injectable()
 export class CookieService {
-    private isProd: boolean;
+  private isProd: boolean;
 
   constructor(private readonly config: ConfigService) {
     this.isProd = this.config.get('NODE_ENV') === 'production';

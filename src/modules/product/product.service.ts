@@ -13,15 +13,25 @@ export class ProductService {
   ) {}
 
   async create(payload: CreateProductRequest): Promise<Product> {
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Creating product initiated', { payload });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Creating product initiated',
+      { payload },
+    );
 
     const categoryExists = await this.prismaService.category.findUnique({
       where: { id: payload.categoryId },
     });
     if (!categoryExists) {
-      this.loggerService.warn('PRODUCT', 'SERVICE', 'Category not found for product creation', {
-        categoryId: payload.categoryId,
-      });
+      this.loggerService.warn(
+        'PRODUCT',
+        'SERVICE',
+        'Category not found for product creation',
+        {
+          categoryId: payload.categoryId,
+        },
+      );
       throw new NotFoundException('Category not found');
     }
 
@@ -36,23 +46,42 @@ export class ProductService {
       },
     });
 
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Product created successfully', { id: product.id });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Product created successfully',
+      { id: product.id },
+    );
     return product;
   }
 
   async findAll(): Promise<Product[]> {
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Fetching all products initiated');
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Fetching all products initiated',
+    );
     const products = await this.prismaService.product.findMany({
       include: {
         category: true,
       },
     });
-    this.loggerService.info('PRODUCT', 'SERVICE', 'All products fetched successfully', { count: products.length });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'All products fetched successfully',
+      { count: products.length },
+    );
     return products;
   }
 
   async findById(id: number): Promise<Product> {
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Fetching product by id initiated', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Fetching product by id initiated',
+      { id },
+    );
     const product = await this.prismaService.product.findUnique({
       where: { id },
       include: {
@@ -61,17 +90,29 @@ export class ProductService {
     });
 
     if (!product) {
-      this.loggerService.warn('PRODUCT', 'SERVICE', 'Product not found', { id });
+      this.loggerService.warn('PRODUCT', 'SERVICE', 'Product not found', {
+        id,
+      });
       throw new NotFoundException('Product not found');
     }
 
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Product fetched successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Product fetched successfully',
+      { id },
+    );
     return product;
   }
 
   async update(id: number, payload: UpdateProductRequest): Promise<Product> {
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Updating product initiated', { id, payload });
-    
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Updating product initiated',
+      { id, payload },
+    );
+
     // Check if product exists
     await this.findById(id);
 
@@ -80,9 +121,14 @@ export class ProductService {
         where: { id: payload.categoryId },
       });
       if (!categoryExists) {
-        this.loggerService.warn('PRODUCT', 'SERVICE', 'Category not found for product update', {
-          categoryId: payload.categoryId,
-        });
+        this.loggerService.warn(
+          'PRODUCT',
+          'SERVICE',
+          'Category not found for product update',
+          {
+            categoryId: payload.categoryId,
+          },
+        );
         throw new NotFoundException('Category not found');
       }
     }
@@ -99,13 +145,23 @@ export class ProductService {
       },
     });
 
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Product updated successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Product updated successfully',
+      { id },
+    );
     return updatedProduct;
   }
 
   async remove(id: number): Promise<Product> {
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Deleting product initiated', { id });
-    
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Deleting product initiated',
+      { id },
+    );
+
     // Check if product exists
     await this.findById(id);
 
@@ -113,7 +169,12 @@ export class ProductService {
       where: { id },
     });
 
-    this.loggerService.info('PRODUCT', 'SERVICE', 'Product deleted successfully', { id });
+    this.loggerService.info(
+      'PRODUCT',
+      'SERVICE',
+      'Product deleted successfully',
+      { id },
+    );
     return deletedProduct;
   }
 }

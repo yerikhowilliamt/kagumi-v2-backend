@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreateCategoryRequest } from './dto/create-category.dto';
@@ -13,7 +17,12 @@ export class CategoryService {
   ) {}
 
   async create(payload: CreateCategoryRequest): Promise<Category> {
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Creating category initiated', { payload });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Creating category initiated',
+      { payload },
+    );
 
     const nameExists = await this.prismaService.category.findUnique({
       where: { name: payload.name },
@@ -40,24 +49,43 @@ export class CategoryService {
       },
     });
 
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Category created successfully', { id: category.id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Category created successfully',
+      { id: category.id },
+    );
     return category;
   }
 
   async findAll(): Promise<Category[]> {
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Fetching all categories initiated');
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Fetching all categories initiated',
+    );
     const categories = await this.prismaService.category.findMany({
       include: {
         parent: true,
         children: true,
       },
     });
-    this.loggerService.info('CATEGORY', 'SERVICE', 'All categories fetched successfully', { count: categories.length });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'All categories fetched successfully',
+      { count: categories.length },
+    );
     return categories;
   }
 
   async findById(id: number): Promise<Category> {
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Fetching category by id initiated', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Fetching category by id initiated',
+      { id },
+    );
     const category = await this.prismaService.category.findUnique({
       where: { id },
       include: {
@@ -67,16 +95,28 @@ export class CategoryService {
     });
 
     if (!category) {
-      this.loggerService.warn('CATEGORY', 'SERVICE', 'Category not found', { id });
+      this.loggerService.warn('CATEGORY', 'SERVICE', 'Category not found', {
+        id,
+      });
       throw new NotFoundException('Category not found');
     }
 
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Category fetched successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Category fetched successfully',
+      { id },
+    );
     return category;
   }
 
   async update(id: number, payload: UpdateCategoryRequest): Promise<Category> {
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Updating category initiated', { id, payload });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Updating category initiated',
+      { id, payload },
+    );
     const category = await this.findById(id);
 
     if (payload.name && payload.name !== category.name) {
@@ -105,16 +145,29 @@ export class CategoryService {
       data: {
         name: payload.name,
         description: payload.description,
-        parentId: payload.parentId === null ? null : (payload.parentId ?? category.parentId),
+        parentId:
+          payload.parentId === null
+            ? null
+            : (payload.parentId ?? category.parentId),
       },
     });
 
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Category updated successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Category updated successfully',
+      { id },
+    );
     return updatedCategory;
   }
 
   async remove(id: number): Promise<Category> {
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Deleting category initiated', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Deleting category initiated',
+      { id },
+    );
     const category = await this.prismaService.category.findUnique({
       where: { id },
       include: {
@@ -124,12 +177,19 @@ export class CategoryService {
     });
 
     if (!category) {
-      this.loggerService.warn('CATEGORY', 'SERVICE', 'Category not found for deletion', { id });
+      this.loggerService.warn(
+        'CATEGORY',
+        'SERVICE',
+        'Category not found for deletion',
+        { id },
+      );
       throw new NotFoundException('Category not found');
     }
 
     if (category.children.length > 0) {
-      throw new BadRequestException('Cannot delete category that has sub-categories');
+      throw new BadRequestException(
+        'Cannot delete category that has sub-categories',
+      );
     }
 
     if (category.products.length > 0) {
@@ -140,7 +200,12 @@ export class CategoryService {
       where: { id },
     });
 
-    this.loggerService.info('CATEGORY', 'SERVICE', 'Category deleted successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'SERVICE',
+      'Category deleted successfully',
+      { id },
+    );
     return deletedCategory;
   }
 }

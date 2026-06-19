@@ -1,9 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { Account, Category, CustomOrderOption, Image, Order, OrderItem, Payment, Product, User } from 'src/generated/prisma/client';
+import {
+  Account,
+  Category,
+  CustomOrderOption,
+  Image,
+  Order,
+  OrderItem,
+  Payment,
+  Product,
+  User,
+} from 'src/generated/prisma/client';
 import { CategoryResponse } from 'src/models/category.model';
 import { CustomOrderOptionResponse } from 'src/models/custom-order-option.model';
 import { OrderItemResponse } from 'src/models/order-item.model';
-import { DeliveryMethod, OrderResponse, OrderStatus } from 'src/models/order.model';
+import {
+  DeliveryMethod,
+  OrderResponse,
+  OrderStatus,
+} from 'src/models/order.model';
 import { PaymentMethod, PaymentStatus } from 'src/models/payment.model';
 import { ProductResponse, ProductType } from 'src/models/product.model';
 import { Role, UserResponse } from 'src/models/user.model';
@@ -55,16 +69,16 @@ export class ResponseService {
     };
   }
 
-//   public toCloudinaryResponse(upload: UploadApiResponse): CloudinaryResponse {
-//     return {
-//       fileUrl: upload.secure_url,
-//       publicId: upload.public_id,
-//       originalFilename: upload.original_filename,
-//       type: upload.type,
-//       createdAt: upload.created_at,
-//       updatedAt: upload.updated_at,
-//     };
-//   }
+  //   public toCloudinaryResponse(upload: UploadApiResponse): CloudinaryResponse {
+  //     return {
+  //       fileUrl: upload.secure_url,
+  //       publicId: upload.public_id,
+  //       originalFilename: upload.original_filename,
+  //       type: upload.type,
+  //       createdAt: upload.created_at,
+  //       updatedAt: upload.updated_at,
+  //     };
+  //   }
 
   public toCategoryResponse(
     category: Category & {

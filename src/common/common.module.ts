@@ -1,4 +1,10 @@
-import { Global, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  Global,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { LoggerService } from './logger/logger.service';
 import { ErrorService } from './error/error.service';
 import { WinstonModule } from 'nest-winston';

@@ -1,4 +1,9 @@
-import { ArgumentMetadata, BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  Injectable,
+  PipeTransform,
+} from '@nestjs/common';
 
 @Injectable()
 export class ParseOptionalIntPipe implements PipeTransform {
@@ -8,7 +13,7 @@ export class ParseOptionalIntPipe implements PipeTransform {
     }
 
     const val = parseInt(value, 10);
-    
+
     if (isNaN(val)) {
       throw new BadRequestException('Validation failed (integer expected)');
     }

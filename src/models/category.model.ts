@@ -1,4 +1,4 @@
-import { ProductResponse, ProductSummary } from "./product.model";
+import { ProductResponse, ProductSummary } from './product.model';
 
 export class CategoryResponse {
   id: number;
@@ -11,15 +11,13 @@ export class CategoryResponse {
   products: ProductSummary[];
   children: CategorySummary[];
 
-  constructor(
-    params : {
-        id: number,
-        name: string,
-        description: string,
-        createdAt: string,
-        updatedAt: string
-    }
-  ) {
+  constructor(params: {
+    id: number;
+    name: string;
+    description: string;
+    createdAt: string;
+    updatedAt: string;
+  }) {
     const { id, name, description, createdAt, updatedAt } = params;
     this.id = id;
     this.name = name;

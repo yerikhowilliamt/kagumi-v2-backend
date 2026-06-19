@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -29,11 +40,21 @@ export class CategoryController {
   async create(
     @ZodBody(CategoryValidation.CREATE) request: CreateCategoryRequest,
   ): Promise<WebResponse<Category>> {
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Create category request received', { name: request.name });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Create category request received',
+      { name: request.name },
+    );
     const result = await this.categoryService.create(request);
     const message = generateMessage({ action: 'create', subject: 'category' });
 
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Category created successfully', { id: result.id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Category created successfully',
+      { id: result.id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.CREATED,
@@ -44,11 +65,20 @@ export class CategoryController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async findAll(): Promise<WebResponse<Category[]>> {
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Fetch all categories request received');
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Fetch all categories request received',
+    );
     const result = await this.categoryService.findAll();
     const message = generateMessage({ action: 'fetch', subject: 'category' });
 
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Categories fetched successfully', { count: result.length });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Categories fetched successfully',
+      { count: result.length },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -61,11 +91,21 @@ export class CategoryController {
   async findById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Category>> {
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Fetch category by id request received', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Fetch category by id request received',
+      { id },
+    );
     const result = await this.categoryService.findById(id);
     const message = generateMessage({ action: 'fetch', subject: 'category' });
 
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Category fetched successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Category fetched successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -81,11 +121,21 @@ export class CategoryController {
     @Param('id', ParseIntPipe) id: number,
     @ZodBody(CategoryValidation.UPDATE) request: UpdateCategoryRequest,
   ): Promise<WebResponse<Category>> {
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Update category request received', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Update category request received',
+      { id },
+    );
     const result = await this.categoryService.update(id, request);
     const message = generateMessage({ action: 'update', subject: 'category' });
 
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Category updated successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Category updated successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,
@@ -100,11 +150,21 @@ export class CategoryController {
   async remove(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<Category>> {
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Delete category request received', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Delete category request received',
+      { id },
+    );
     const result = await this.categoryService.remove(id);
     const message = generateMessage({ action: 'delete', subject: 'category' });
 
-    this.loggerService.info('CATEGORY', 'CONTROLLER', 'Category deleted successfully', { id });
+    this.loggerService.info(
+      'CATEGORY',
+      'CONTROLLER',
+      'Category deleted successfully',
+      { id },
+    );
     return this.responseService.success({
       data: result,
       status: HttpStatus.OK,

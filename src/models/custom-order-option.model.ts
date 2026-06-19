@@ -1,4 +1,4 @@
-import { ProductResponse, ProductSummary } from "./product.model";
+import { ProductResponse, ProductSummary } from './product.model';
 
 export class CustomOrderOptionResponse {
   id: number;
@@ -20,7 +20,8 @@ export class CustomOrderOptionResponse {
     updatedAt: string;
     product: ProductResponse;
   }) {
-    const { id, productId, label, required, createdAt, updatedAt, product } = params;
+    const { id, productId, label, required, createdAt, updatedAt, product } =
+      params;
     this.id = id;
     this.productId = productId;
     this.label = label;

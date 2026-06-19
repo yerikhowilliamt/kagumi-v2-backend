@@ -86,8 +86,12 @@ describe('ProductService', () => {
     });
 
     it('should create a product successfully', async () => {
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory);
-      jest.spyOn(prismaService.product, 'create').mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
+      jest
+        .spyOn(prismaService.product, 'create')
+        .mockResolvedValue(mockProduct);
 
       const result = await service.create({
         categoryId: 1,
@@ -105,7 +109,9 @@ describe('ProductService', () => {
 
   describe('findAll', () => {
     it('should return all products', async () => {
-      jest.spyOn(prismaService.product, 'findMany').mockResolvedValue([mockProduct]);
+      jest
+        .spyOn(prismaService.product, 'findMany')
+        .mockResolvedValue([mockProduct]);
 
       const result = await service.findAll();
       expect(result).toHaveLength(1);
@@ -121,7 +127,9 @@ describe('ProductService', () => {
     });
 
     it('should return product if found', async () => {
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct);
 
       const result = await service.findById(1);
       expect(result.name).toBe('Smartphone');
@@ -140,7 +148,9 @@ describe('ProductService', () => {
     });
 
     it('should throw NotFoundException if updating to a non-existent category', async () => {
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(null);
 
       await expect(
@@ -151,8 +161,12 @@ describe('ProductService', () => {
     });
 
     it('should update product successfully', async () => {
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct);
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({
         ...mockProduct,
         name: 'Updated Name',
@@ -175,8 +189,12 @@ describe('ProductService', () => {
     });
 
     it('should delete product successfully', async () => {
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct);
-      jest.spyOn(prismaService.product, 'delete').mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct);
+      jest
+        .spyOn(prismaService.product, 'delete')
+        .mockResolvedValue(mockProduct);
 
       const result = await service.remove(1);
       expect(result.id).toBe(1);

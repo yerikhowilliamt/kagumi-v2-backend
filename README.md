@@ -117,6 +117,13 @@ All controller routes return responses wrapped in a standard `WebResponse` struc
 - `PATCH /api/orders/:id`: Update order (ADMIN can change status/method; USER can only change status to `CANCELED` if current status is `PENDING`, which restores stock).
 - `DELETE /api/orders/:id`: Hard delete order (ADMIN only).
 
+### 🖼️ Images (`/api/images`)
+- `POST /api/images`: Upload a single (using `image` field) or multiple (using `images` field) images (ADMIN only).
+- `GET /api/images`: List all images (ADMIN & USER).
+- `GET /api/images/:id`: Get image detail by ID (ADMIN & USER).
+- `PATCH /api/images/:id`: Update single or multiple images by comma-separated IDs (ADMIN only).
+- `DELETE /api/images/:id`: Delete single or multiple images by comma-separated IDs (ADMIN only, also deletes from Cloudinary).
+
 ---
 
 ## 🧪 Testing
@@ -140,3 +147,4 @@ For manual testing, you can use the **REST Client** extension in VS Code with th
 - [http/categories.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/categories.http) - Category CRUD requests.
 - [http/products.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/products.http) - Product CRUD requests.
 - [http/orders.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/orders.http) - Order CRUD & status tracking requests.
+- [http/images.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/images.http) - Image CRUD & upload requests.

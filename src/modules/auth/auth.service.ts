@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -13,7 +18,7 @@ import { Account, Order, Payment, User } from 'src/generated/prisma/client';
 
 @Injectable()
 export class AuthService {
-    constructor(
+  constructor(
     private readonly loggerService: LoggerService,
     private readonly prismaService: PrismaService,
     private readonly token: TokenService,
@@ -57,7 +62,7 @@ export class AuthService {
     return this.response.toAuthResponse(user);
   }
 
-    async login(loginRequest: LoginAuthRequest): Promise<
+  async login(loginRequest: LoginAuthRequest): Promise<
     UserResponse & {
       accessToken: string;
       refreshToken: string;

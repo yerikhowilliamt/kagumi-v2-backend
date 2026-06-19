@@ -1,5 +1,5 @@
-import { OrderSummary } from "./order.model";
-import { ProductSummary } from "./product.model";
+import { OrderSummary } from './order.model';
+import { ProductSummary } from './product.model';
 
 export class OrderItemResponse {
   id: number;
@@ -25,7 +25,17 @@ export class OrderItemResponse {
     order: OrderSummary;
     product: ProductSummary;
   }) {
-    const { id, orderId, productId, quantity, priceEach, createdAt, updatedAt, order, product } = params;
+    const {
+      id,
+      orderId,
+      productId,
+      quantity,
+      priceEach,
+      createdAt,
+      updatedAt,
+      order,
+      product,
+    } = params;
     this.id = id;
     this.orderId = orderId;
     this.productId = productId;

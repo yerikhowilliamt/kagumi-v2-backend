@@ -1,0 +1,217 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider      = "prisma-client"
+  output        = "../src/generated/prisma"
+  moduleFormat  = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  publicId      String?   @map("public_id")
+  name          String    @db.VarChar(100)
+  email         String    @unique @db.VarChar(100)
+  emailVerified DateTime? @map("email_verified")
+  phone         String?   @unique
+  address       String?
+  password      String?   @db.VarChar(100)
+  refreshToken  String?   @map("refresh_token")
+  imageUrl      String?   @map("image_url")
+  role          Roles     @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  accounts      Account[]
+  orders        Order[]
+  payments      Payment[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Account {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  provider          String
+  providerAccountId String   @unique @map("provider_account_id")
+  refreshToken      String?  @map("refresh_token")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Category {
+  id          Int        @id @default(autoincrement())
+  parentId    Int?       @map("parent_id")
+  name        String     @unique
+  description String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Product {
+  id           Int                 @id @default(autoincrement())
+  categoryId   Int                 @map("category_id")
+  name         String
+  description  String
+  price        Decimal             @db.Decimal(10, 2)
+  type         ProductType
+  stock        Int                 @default(0)
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+  customOrders CustomOrderOption[]
+  images       Image[]
+  orderItems   OrderItem[]
+  category     Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@index([categoryId, id])
+  @@index([categoryId, price, stock])
+  @@index([price])
+  @@index([name])
+  @@map("products")
+}
+
+model Order {
+  id             Int            @id @default(autoincrement())
+  userId         Int            @map("user_id")
+  totalPrice     Decimal        @map("total_price") @db.Decimal(10, 2)
+  status         OrderStatus    @default(PENDING)
+  deliveryMethod DeliveryMethod @map("delivery_method")
+  paymentMethod  PaymentMethod  @map("payment_method")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  orderItems     OrderItem[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment        Payment?
+
+  @@index([userId])
+  @@index([userId, status, deliveryMethod, paymentMethod])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  orderId       Int           @unique @map("order_id")
+  userId        Int           @map("user_id")
+  transactionId String        @unique @map("transaction_id")
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  paymentProof  String?       @map("payment_proof")
+  metadata      Json?
+  failureReason String?       @map("failure_reason")
+  refundAmount  Decimal?      @map("refund_amount") @db.Decimal(10, 2)
+  refundedAt    DateTime?     @map("refunded_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([userId, status])
+  @@map("payments")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  productId Int      @map("product_id")
+  quantity  Int
+  note      String?
+  priceEach Decimal  @map("price_each") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([orderId, productId])
+  @@map("order_items")
+}
+
+model CustomOrderOption {
+  id          Int      @id @default(autoincrement())
+  productId   Int      @map("product_id")
+  label       String
+  placeholder String?
+  required    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("custom_order_options")
+}
+
+model Image {
+  id        Int      @id @default(autoincrement())
+  productId Int      @map("product_id")
+  publicId  String   @unique @map("public_id")
+  urls      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("images")
+}
+
+enum Roles {
+  ADMIN
+  USER
+}
+
+enum ProductType {
+  REGULAR
+  DAILY_BAKE
+  CUSTOM
+}
+
+enum PaymentMethod {
+  TRANSFER
+  E_WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  SETTLEMENT
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  DELIVERING
+  COMPLETED
+  CANCELED
+}
+
+enum DeliveryMethod {
+  DELIVERY
+  COD
+}

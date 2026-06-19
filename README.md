@@ -1,98 +1,134 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Kagumi v2 Backend API Documentation
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A progressive backend application built with **NestJS**, **Prisma ORM**, **Zod** (for request validation), and **PostgreSQL**.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Getting Started
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Prerequisites
+- Node.js (v18 or higher recommended)
+- PostgreSQL database running locally or remotely
 
-## Project setup
+### Project Setup
+1. Clone the repository and install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-$ npm install
+2. Configure environment variables. Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL="postgresql://user:password@localhost:5432/kagumi_db?schema=public"
+   PORT=4015
+   JWT_SECRET="your-super-secret-key"
+   ```
+
+3. Run Prisma Migrations to set up your database schema:
+   ```bash
+   npx prisma migrate dev
+   ```
+
+4. Start the application:
+   ```bash
+   # Development mode (with auto-reload)
+   npm run start:dev
+
+   # Production mode
+   npm run build
+   npm run start:prod
+   ```
+
+---
+
+## 📁 Project Architecture & Folder Structure
+
+```text
+src/
+├── common/                  # Shared configurations, guards, filters, middlewares
+│   ├── interceptors/        # Global logging interceptors
+│   ├── logger/              # LoggerService wrapper around winston
+│   ├── middleware/          # AuthMiddleware for request authorization
+│   └── validation/          # Custom Zod validation decorators & pipes
+├── helpers/                 # Utility services (response, tokens, crypto)
+│   ├── response/            # Custom ResponseService to standardize HTTP responses
+│   ├── token/               # JWT token creation and verification
+│   └── crypto/              # Password hashing using bcryptjs
+├── models/                  # Custom TypeScript models & interfaces (e.g. WebResponse)
+├── modules/                 # App Feature Modules
+│   ├── auth/                # Auth module (register, login, etc.)
+│   ├── category/            # Category module (CRUD)
+│   ├── product/             # Product module (CRUD)
+│   └── user/                # User management
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🔒 Request Validation & Custom Responses
 
-# watch mode
-$ npm run start:dev
+### 1. Zod Validation
+The project uses `nestjs-zod` for validating request payloads. DTOs are instantiated using `createZodDto` pointing to the Zod schemas located in `*.validation.ts` files.
+Validation errors are handled globally and returned as structured HTTP 400 Bad Request responses.
 
-# production mode
-$ npm run start:prod
+### 2. Standardized Web Response
+All controller routes return responses wrapped in a standard `WebResponse` structure using `ResponseService.success()`:
+```json
+{
+  "success": true,
+  "message": "Subject action successfully",
+  "status": 200,
+  "data": { ... },
+  "timestamp": "2026-06-19T07:04:16.778Z"
+}
 ```
 
-## Run tests
+---
+
+## 📡 API Reference & Endpoints
+
+### 🔑 Authentication (`/api/auth`)
+- `POST /api/auth/register`: Register a new user.
+- `POST /api/auth/login`: Login user (attaches HTTP-only JWT cookie `access_token`).
+
+### 👤 Users (`/api/users`)
+- `GET /api/users/current`: Retrieve current logged-in user profile.
+- `PATCH /api/users/current/profile`: Update user profile details.
+- `PATCH /api/users/current/password`: Change user password.
+- `GET /api/users`: List all users (ADMIN role only).
+- `DELETE /api/users/logout`: Clear JWT session cookies.
+
+### 📁 Categories (`/api/categories`)
+- `POST /api/categories`: Create a new category.
+- `GET /api/categories`: List all categories.
+- `GET /api/categories/:id`: Get category detail by ID.
+- `PATCH /api/categories/:id`: Update category by ID.
+- `DELETE /api/categories/:id`: Delete category by ID (Restricted if it contains child categories or products).
+
+### 🏷️ Products (`/api/products`)
+- `POST /api/products`: Create a new product.
+- `GET /api/products`: List all products.
+- `GET /api/products/:id`: Get product detail by ID.
+- `PATCH /api/products/:id`: Update product details.
+- `DELETE /api/products/:id`: Delete product by ID.
+
+---
+
+## 🧪 Testing
+
+The codebase includes comprehensive unit and integration testing.
 
 ```bash
-# unit tests
-$ npm run test
+# Run all unit tests (with mocks)
+npm run test
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Run all E2E tests (Mock DB + Real DB validation)
+npm run test:e2e
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 📮 Manual API Testing (REST Client)
+For manual testing, you can use the **REST Client** extension in VS Code with the `.http` files stored under the `http/` directory:
+- [http/auth.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/auth.http) - Register & login requests.
+- [http/user.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/user.http) - User management & profile testing.
+- [http/categories.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/categories.http) - Category CRUD requests.
+- [http/products.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/products.http) - Product CRUD requests.

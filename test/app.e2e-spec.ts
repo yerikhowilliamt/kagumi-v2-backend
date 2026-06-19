@@ -318,4 +318,120 @@ describe('API Flow (e2e)', () => {
         });
     });
   });
+
+  describe('Product Endpoints', () => {
+    const mockCategory = {
+      id: 5,
+      name: 'Baking',
+      description: 'Baking goods',
+      parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockProduct = {
+      id: 20,
+      categoryId: 5,
+      name: 'Premium Flour',
+      description: 'Finest quality flour',
+      price: 15.5,
+      type: 'REGULAR',
+      stock: 100,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      category: mockCategory,
+    };
+
+    it('POST /api/products - success', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
+      jest.spyOn(prismaService.product, 'create').mockResolvedValue(mockProduct as any);
+
+      return request(app.getHttpServer())
+        .post('/api/products')
+        .send({
+          categoryId: 5,
+          name: 'Premium Flour',
+          description: 'Finest quality flour',
+          price: 15.5,
+          type: 'REGULAR',
+          stock: 100,
+        })
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.name).toBe('Premium Flour');
+        });
+    });
+
+    it('POST /api/products - fail (invalid category)', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(null);
+
+      return request(app.getHttpServer())
+        .post('/api/products')
+        .send({
+          categoryId: 999,
+          name: 'Premium Flour',
+          description: 'Finest quality flour',
+          price: 15.5,
+          type: 'REGULAR',
+          stock: 100,
+        })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('GET /api/products - success', async () => {
+      jest.spyOn(prismaService.product, 'findMany').mockResolvedValue([mockProduct] as any);
+
+      return request(app.getHttpServer())
+        .get('/api/products')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+
+      return request(app.getHttpServer())
+        .get('/api/products/20')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(20);
+        });
+    });
+
+    it('PATCH /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue({
+        ...mockProduct,
+        name: 'Updated Flour',
+      } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/products/20')
+        .send({
+          name: 'Updated Flour',
+        })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.name).toBe('Updated Flour');
+        });
+    });
+
+    it('DELETE /api/products/:id - success', async () => {
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.product, 'delete').mockResolvedValue(mockProduct as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/products/20')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
 });

@@ -21,6 +21,7 @@ describe('API Flow with Real Database (e2e)', () => {
   let userCookie: string[];
   let categoryId: number;
   let testUserId: number;
+  let productId: number;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -39,6 +40,9 @@ describe('API Flow with Real Database (e2e)', () => {
   afterAll(async () => {
     // Cleanup database records created during testing
     try {
+      if (productId) {
+        await prismaService.product.delete({ where: { id: productId } }).catch(() => {});
+      }
       if (categoryId) {
         await prismaService.category.delete({ where: { id: categoryId } }).catch(() => {});
       }
@@ -197,6 +201,83 @@ describe('API Flow with Real Database (e2e)', () => {
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.name).toBe(updatedCategoryName);
+    });
+
+    describe('Product Operations Flow', () => {
+      it('POST /api/products - success', async () => {
+        const res = await request(app.getHttpServer())
+          .post('/api/products')
+          .send({
+            categoryId: categoryId,
+            name: `Real Product_${timestamp}`,
+            description: 'Testing product with real DB',
+            price: 120.50,
+            type: 'REGULAR',
+            stock: 50,
+          })
+          .expect(HttpStatus.CREATED);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.name).toBe(`Real Product_${timestamp}`);
+        productId = res.body.data.id;
+      });
+
+      it('POST /api/products - fail (invalid category)', async () => {
+        await request(app.getHttpServer())
+          .post('/api/products')
+          .send({
+            categoryId: 999999,
+            name: 'Invalid Product',
+            description: 'Fail creation',
+            price: 10.0,
+            type: 'REGULAR',
+          })
+          .expect(HttpStatus.NOT_FOUND);
+      });
+
+      it('GET /api/products - success', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/api/products')
+          .expect(HttpStatus.OK);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.length).toBeGreaterThan(0);
+      });
+
+      it('GET /api/products/:id - success', async () => {
+        const res = await request(app.getHttpServer())
+          .get(`/api/products/${productId}`)
+          .expect(HttpStatus.OK);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.id).toBe(productId);
+      });
+
+      it('PATCH /api/products/:id - success', async () => {
+        const res = await request(app.getHttpServer())
+          .patch(`/api/products/${productId}`)
+          .send({
+            name: `Real Product Updated_${timestamp}`,
+            price: 150.00,
+            stock: 40,
+          })
+          .expect(HttpStatus.OK);
+
+        expect(res.body.success).toBe(true);
+        expect(res.body.data.name).toBe(`Real Product Updated_${timestamp}`);
+        expect(parseFloat(res.body.data.price)).toBe(150.00);
+      });
+
+      it('DELETE /api/products/:id - success', async () => {
+        await request(app.getHttpServer())
+          .delete(`/api/products/${productId}`)
+          .expect(HttpStatus.OK);
+
+        // Verify product no longer exists
+        await request(app.getHttpServer())
+          .get(`/api/products/${productId}`)
+          .expect(HttpStatus.NOT_FOUND);
+      });
     });
 
     it('DELETE /api/categories/:id - success', async () => {

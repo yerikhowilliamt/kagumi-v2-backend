@@ -1,0 +1,26 @@
+### 1. Create a New Category
+POST http://localhost:4015/api/categories
+Content-Type: application/json
+
+{
+  "name": "Electronics",
+  "description": "Electronic gadgets and devices"
+}
+
+### 2. Get All Categories
+GET http://localhost:4015/api/categories
+
+### 3. Get Category by ID (Ganti ID sesuai dengan hasil create)
+GET http://localhost:4015/api/categories/1
+
+### 4. Update Category (Ganti ID sesuai kebutuhan)
+PATCH http://localhost:4015/api/categories/1
+Content-Type: application/json
+
+{
+  "name": "Consumer Electronics",
+  "description": "Updated description for electronics"
+}
+
+### 5. Delete Category (Ganti ID sesuai kebutuhan)
+DELETE http://localhost:4015/api/categories/1

@@ -212,4 +212,110 @@ describe('API Flow (e2e)', () => {
         });
     });
   });
+
+  describe('Category Endpoints', () => {
+    const mockCategory = {
+      id: 10,
+      name: 'Electronics',
+      description: 'Electronic things',
+      parentId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      children: [],
+      products: [],
+    };
+
+    it('POST /api/categories - success', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.category, 'create').mockResolvedValue(mockCategory as any);
+
+      return request(app.getHttpServer())
+        .post('/api/categories')
+        .send({
+          name: 'Electronics',
+          description: 'Electronic things',
+        })
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.name).toBe('Electronics');
+        });
+    });
+
+    it('POST /api/categories - fail (duplicate name)', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
+
+      return request(app.getHttpServer())
+        .post('/api/categories')
+        .send({
+          name: 'Electronics',
+          description: 'Electronic things',
+        })
+        .expect(HttpStatus.BAD_REQUEST)
+        .expect((res) => {
+          expect(res.body.message).toBe('Category name already exists');
+        });
+    });
+
+    it('GET /api/categories - success', async () => {
+      jest.spyOn(prismaService.category, 'findMany').mockResolvedValue([mockCategory] as any);
+
+      return request(app.getHttpServer())
+        .get('/api/categories')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
+
+      return request(app.getHttpServer())
+        .get('/api/categories/10')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(10);
+        });
+    });
+
+    it('PATCH /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValueOnce(mockCategory as any)
+        .mockResolvedValueOnce(null);
+      jest.spyOn(prismaService.category, 'update').mockResolvedValue({
+        ...mockCategory,
+        name: 'Updated Electronics',
+      } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/categories/10')
+        .send({
+          name: 'Updated Electronics',
+        })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.name).toBe('Updated Electronics');
+        });
+    });
+
+    it('DELETE /api/categories/:id - success', async () => {
+      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue({
+        ...mockCategory,
+        children: [],
+        products: [],
+      } as any);
+      jest.spyOn(prismaService.category, 'delete').mockResolvedValue(mockCategory as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/categories/10')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
 });

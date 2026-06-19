@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { LoggerService } from './logger/logger.service';
 import { ErrorService } from './error/error.service';
 import { WinstonModule } from 'nest-winston';
@@ -11,6 +11,7 @@ import { ErrorFilter } from './error/error.filter';
 import { LoggerInterceptor } from './logger/logger.interceptor';
 import { JwtUtilService } from './utils/jwt-util.service';
 import { ParseOptionalIntPipe } from './pipe/parse-optional-int.pipe';
+import { AuthMiddleware } from './middleware/auth.middleware';
 
 @Global()
 @Module({
@@ -98,4 +99,14 @@ import { ParseOptionalIntPipe } from './pipe/parse-optional-int.pipe';
     ParseOptionalIntPipe,
   ],
 })
-export class CommonModule {}
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AuthMiddleware)
+      .exclude(
+        { path: '/api/auth/login', method: RequestMethod.POST },
+        { path: '/api/auth/register', method: RequestMethod.POST },
+      )
+      .forRoutes({ path: '/api/*path', method: RequestMethod.ALL });
+  }
+}

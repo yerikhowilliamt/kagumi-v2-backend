@@ -1020,4 +1020,169 @@ describe('API Flow (e2e)', () => {
         });
     });
   });
+
+  describe('Payment Endpoints', () => {
+    let userCookie: string[];
+    let adminCookie: string[];
+
+    const mockOrder = {
+      id: 50,
+      userId: 2,
+      totalPrice: 50.00,
+      status: 'PENDING',
+      deliveryMethod: 'DELIVERY',
+      paymentMethod: 'TRANSFER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockPayment = {
+      id: 80,
+      orderId: 50,
+      userId: 2,
+      transactionId: 'TX-99999',
+      amount: 50.00,
+      paymentMethod: 'TRANSFER',
+      status: 'PENDING',
+      paymentProof: null,
+      metadata: null,
+      failureReason: null,
+      refundAmount: null,
+      refundedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      order: mockOrder,
+      user: {
+        id: 2,
+        name: 'Normal User',
+        email: 'user@mail.com',
+      },
+    };
+
+    beforeAll(async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      const userRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userRes.headers['set-cookie'];
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      const adminRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminRes.headers['set-cookie'];
+    });
+
+    it('POST /api/payments - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+      jest.spyOn(prismaService.payment, 'create').mockResolvedValue(mockPayment as any);
+
+      return request(app.getHttpServer())
+        .post('/api/payments')
+        .set('Cookie', userCookie)
+        .send({
+          orderId: 50,
+          transactionId: 'TX-99999',
+          amount: 50.00,
+          paymentMethod: 'TRANSFER',
+        })
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(80);
+        });
+    });
+
+    it('GET /api/payments - success as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.payment, 'findMany').mockResolvedValue([mockPayment] as any);
+
+      return request(app.getHttpServer())
+        .get('/api/payments')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/payments/:id - success as owner', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.payment, 'findUnique').mockResolvedValue(mockPayment as any);
+
+      return request(app.getHttpServer())
+        .get('/api/payments/80')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(80);
+        });
+    });
+
+    it('GET /api/payments/:id - fail as non-owner user', async () => {
+      // Mock user is normal user with id 2. Let's make payment belong to userId 3.
+      const otherPayment = { ...mockPayment, userId: 3 };
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.payment, 'findUnique').mockResolvedValue(otherPayment as any);
+
+      return request(app.getHttpServer())
+        .get('/api/payments/80')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('PATCH /api/payments/:id - fail as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/payments/80')
+        .set('Cookie', userCookie)
+        .send({ status: 'SETTLEMENT' })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('PATCH /api/payments/:id - success as admin', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.payment, 'findUnique').mockResolvedValue(mockPayment as any);
+      jest.spyOn(prismaService.payment, 'update').mockResolvedValue({ ...mockPayment, status: 'SETTLEMENT' } as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/payments/80')
+        .set('Cookie', adminCookie)
+        .send({ status: 'SETTLEMENT' })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.status).toBe('SETTLEMENT');
+        });
+    });
+
+    it('DELETE /api/payments/:id - fail as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/payments/80')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('DELETE /api/payments/:id - success as admin', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.payment, 'findUnique').mockResolvedValue(mockPayment as any);
+      jest.spyOn(prismaService.payment, 'delete').mockResolvedValue(mockPayment as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/payments/80')
+        .set('Cookie', adminCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
 });

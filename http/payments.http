@@ -1,0 +1,55 @@
+### 1. Login User
+POST http://localhost:4015/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "password": "Password123"
+}
+
+### 2. Create Payment (Role USER or ADMIN. Ganti orderId dengan order ID milik user ini)
+POST http://localhost:4015/api/payments
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "transactionId": "TX-MANUAL-12345",
+  "amount": 50.00,
+  "paymentMethod": "TRANSFER",
+  "paymentProof": "https://example.com/payment-proof.png",
+  "metadata": {
+    "bank": "BCA",
+    "senderName": "John Doe"
+  }
+}
+
+### 3. Get All Payments (USER gets self, ADMIN gets all)
+GET http://localhost:4015/api/payments
+
+### 4. Get Payment by ID
+GET http://localhost:4015/api/payments/1
+
+### 5. Login Admin
+POST http://localhost:4015/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mail.com",
+  "password": "Password123"
+}
+
+### 6. Update Payment (Only ADMIN)
+PATCH http://localhost:4015/api/payments/1
+Content-Type: application/json
+
+{
+  "status": "SETTLEMENT",
+  "metadata": {
+    "bank": "BCA",
+    "senderName": "John Doe",
+    "verifiedBy": "Admin Alice"
+  }
+}
+
+### 7. Delete Payment (Only ADMIN)
+DELETE http://localhost:4015/api/payments/1

@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from 'src/common/prisma/prisma.service';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import * as bcrypt from 'bcryptjs';
 import cookieParser = require('cookie-parser');
 
@@ -57,7 +58,16 @@ describe('API Flow (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(CloudinaryService)
+      .useValue({
+        uploadFile: jest.fn().mockResolvedValue({
+          public_id: 'folder/img1',
+          secure_url: 'https://cloudinary.com/folder/img1.jpg',
+        }),
+        destroyFile: jest.fn().mockResolvedValue({ result: 'ok' }),
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.use(cookieParser('token'));
@@ -68,16 +78,24 @@ describe('API Flow (e2e)', () => {
     await app.init();
 
     // Login Admin
-    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-    jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+    jest
+      .spyOn(prismaService.user, 'findUnique')
+      .mockResolvedValue(mockAdminUser as any);
+    jest
+      .spyOn(prismaService.user, 'update')
+      .mockResolvedValue(mockAdminUser as any);
     const adminRes = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({ email: 'admin@mail.com', password: passwordPlain });
     globalAdminCookie = adminRes.headers['set-cookie'];
 
     // Login User
-    jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-    jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+    jest
+      .spyOn(prismaService.user, 'findUnique')
+      .mockResolvedValue(mockNormalUser as any);
+    jest
+      .spyOn(prismaService.user, 'update')
+      .mockResolvedValue(mockNormalUser as any);
     const userRes = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({ email: 'user@mail.com', password: passwordPlain });
@@ -90,8 +108,13 @@ describe('API Flow (e2e)', () => {
 
   describe('Auth Endpoints', () => {
     it('POST /api/auth/register - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-      jest.spyOn(prismaService.user, 'create').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(prismaService.user, 'create')
+        .mockResolvedValue(mockNormalUser as any);
 
       return request(app.getHttpServer())
         .post('/api/auth/register')
@@ -110,8 +133,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/auth/login - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
 
       const response = await request(app.getHttpServer())
         .post('/api/auth/login')
@@ -131,16 +158,24 @@ describe('API Flow (e2e)', () => {
     let userCookie: string[];
 
     beforeAll(async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
 
       const adminLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ email: 'admin@mail.com', password: passwordPlain });
       adminCookie = adminLoginRes.headers['set-cookie'];
 
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
 
       const userLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
@@ -149,7 +184,9 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/users/current - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
 
       return request(app.getHttpServer())
         .get('/api/users/current')
@@ -162,8 +199,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/users (ADMIN only) - success as Admin', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'findMany').mockResolvedValue([mockAdminUser, mockNormalUser] as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findMany')
+        .mockResolvedValue([mockAdminUser, mockNormalUser] as any);
       jest.spyOn(prismaService.user, 'count').mockResolvedValue(2);
 
       return request(app.getHttpServer())
@@ -177,7 +218,9 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/users (ADMIN only) - fail as User', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
 
       return request(app.getHttpServer())
         .get('/api/users')
@@ -187,8 +230,12 @@ describe('API Flow (e2e)', () => {
 
     it('PATCH /api/users/current/profile - success', async () => {
       const updatedUser = { ...mockNormalUser, name: 'New Name' };
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(updatedUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(updatedUser as any);
 
       return request(app.getHttpServer())
         .patch('/api/users/current/profile')
@@ -202,8 +249,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/users/current/password - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
 
       return request(app.getHttpServer())
         .patch('/api/users/current/password')
@@ -217,8 +268,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/users/logout - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
 
       return request(app.getHttpServer())
         .delete('/api/users/logout')
@@ -247,16 +302,24 @@ describe('API Flow (e2e)', () => {
     };
 
     beforeAll(async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
 
       const adminLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ email: 'admin@mail.com', password: passwordPlain });
       adminCookie = adminLoginRes.headers['set-cookie'];
 
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
 
       const userLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
@@ -265,9 +328,15 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/categories - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValueOnce(null);
-      jest.spyOn(prismaService.category, 'create').mockResolvedValue(mockCategory as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValueOnce(null);
+      jest
+        .spyOn(prismaService.category, 'create')
+        .mockResolvedValue(mockCategory);
 
       return request(app.getHttpServer())
         .post('/api/categories')
@@ -284,8 +353,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/categories - fail (duplicate name)', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
 
       return request(app.getHttpServer())
         .post('/api/categories')
@@ -301,8 +374,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/categories - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.category, 'findMany').mockResolvedValue([mockCategory] as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.category, 'findMany')
+        .mockResolvedValue([mockCategory]);
 
       return request(app.getHttpServer())
         .get('/api/categories')
@@ -315,8 +392,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/categories/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
 
       return request(app.getHttpServer())
         .get('/api/categories/10')
@@ -329,14 +410,17 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/categories/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.category, 'findUnique')
-        .mockResolvedValueOnce(mockCategory as any)
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValueOnce(mockCategory)
         .mockResolvedValueOnce(null);
       jest.spyOn(prismaService.category, 'update').mockResolvedValue({
         ...mockCategory,
         name: 'Updated Electronics',
-      } as any);
+      });
 
       return request(app.getHttpServer())
         .patch('/api/categories/10')
@@ -352,13 +436,17 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/categories/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue({
         ...mockCategory,
         children: [],
         products: [],
       } as any);
-      jest.spyOn(prismaService.category, 'delete').mockResolvedValue(mockCategory as any);
+      jest
+        .spyOn(prismaService.category, 'delete')
+        .mockResolvedValue(mockCategory);
 
       return request(app.getHttpServer())
         .delete('/api/categories/10')
@@ -396,16 +484,24 @@ describe('API Flow (e2e)', () => {
       category: mockCategory,
     };
     beforeAll(async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
 
       const adminLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ email: 'admin@mail.com', password: passwordPlain });
       adminCookie = adminLoginRes.headers['set-cookie'];
 
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
 
       const userLoginRes = await request(app.getHttpServer())
         .post('/api/auth/login')
@@ -414,9 +510,15 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/products - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(mockCategory as any);
-      jest.spyOn(prismaService.product, 'create').mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.category, 'findUnique')
+        .mockResolvedValue(mockCategory);
+      jest
+        .spyOn(prismaService.product, 'create')
+        .mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .post('/api/products')
@@ -437,7 +539,9 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/products - fail (invalid category)', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
       jest.spyOn(prismaService.category, 'findUnique').mockResolvedValue(null);
 
       return request(app.getHttpServer())
@@ -455,8 +559,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/products - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.product, 'findMany').mockResolvedValue([mockProduct] as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.product, 'findMany')
+        .mockResolvedValue([mockProduct] as any);
 
       return request(app.getHttpServer())
         .get('/api/products')
@@ -469,8 +577,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/products/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .get('/api/products/20')
@@ -483,8 +595,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/products/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({
         ...mockProduct,
         name: 'Updated Flour',
@@ -504,9 +620,15 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/products/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
-      jest.spyOn(prismaService.product, 'delete').mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService.product, 'delete')
+        .mockResolvedValue(mockProduct as any);
 
       return request(app.getHttpServer())
         .delete('/api/products/20')
@@ -527,7 +649,7 @@ describe('API Flow (e2e)', () => {
       categoryId: 1,
       name: 'Loaf of Bread',
       description: 'Fresh loaf',
-      price: 25.00,
+      price: 25.0,
       type: 'REGULAR',
       stock: 10,
       createdAt: new Date(),
@@ -537,7 +659,7 @@ describe('API Flow (e2e)', () => {
     const mockOrder = {
       id: 50,
       userId: 2,
-      totalPrice: 50.00,
+      totalPrice: 50.0,
       status: 'PENDING',
       deliveryMethod: 'DELIVERY',
       paymentMethod: 'TRANSFER',
@@ -549,7 +671,7 @@ describe('API Flow (e2e)', () => {
           orderId: 50,
           productId: 1,
           quantity: 2,
-          priceEach: 25.00,
+          priceEach: 25.0,
           note: 'Fresh please',
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -564,15 +686,23 @@ describe('API Flow (e2e)', () => {
     };
 
     beforeAll(async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
       const userRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ email: 'user@mail.com', password: passwordPlain });
       userCookie = userRes.headers['set-cookie'];
 
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
       const adminRes = await request(app.getHttpServer())
         .post('/api/auth/login')
         .send({ email: 'admin@mail.com', password: passwordPlain });
@@ -580,13 +710,25 @@ describe('API Flow (e2e)', () => {
     });
 
     it('POST /api/orders - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
-      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
-      jest.spyOn(prismaService.order, 'create').mockResolvedValue({ id: 50 } as any);
-      jest.spyOn(prismaService.orderItem, 'create').mockResolvedValue({} as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
+      jest
+        .spyOn(prismaService, '$transaction')
+        .mockImplementation(async (cb: any) => cb(prismaService));
+      jest
+        .spyOn(prismaService.order, 'create')
+        .mockResolvedValue({ id: 50 } as any);
+      jest
+        .spyOn(prismaService.orderItem, 'create')
+        .mockResolvedValue({} as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
-      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+      jest
+        .spyOn(prismaService.order, 'findUnique')
+        .mockResolvedValue(mockOrder as any);
 
       return request(app.getHttpServer())
         .post('/api/orders')
@@ -604,8 +746,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/orders - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.order, 'findMany').mockResolvedValue([mockOrder] as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.order, 'findMany')
+        .mockResolvedValue([mockOrder] as any);
 
       return request(app.getHttpServer())
         .get('/api/orders')
@@ -618,8 +764,12 @@ describe('API Flow (e2e)', () => {
     });
 
     it('GET /api/orders/:id - success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.order, 'findUnique')
+        .mockResolvedValue(mockOrder as any);
 
       return request(app.getHttpServer())
         .get('/api/orders/50')
@@ -632,13 +782,20 @@ describe('API Flow (e2e)', () => {
     });
 
     it('PATCH /api/orders/:id - user cancel success', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
-      jest.spyOn(prismaService.order, 'findUnique')
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.order, 'findUnique')
         .mockResolvedValueOnce(mockOrder as any)
         .mockResolvedValueOnce({ ...mockOrder, status: 'CANCELED' } as any);
-      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest
+        .spyOn(prismaService, '$transaction')
+        .mockImplementation(async (cb: any) => cb(prismaService));
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
-      jest.spyOn(prismaService.order, 'update').mockResolvedValue({ ...mockOrder, status: 'CANCELED' } as any);
+      jest
+        .spyOn(prismaService.order, 'update')
+        .mockResolvedValue({ ...mockOrder, status: 'CANCELED' } as any);
 
       return request(app.getHttpServer())
         .patch('/api/orders/50')
@@ -652,7 +809,9 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/orders/:id - fail as user', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
 
       return request(app.getHttpServer())
         .delete('/api/orders/50')
@@ -661,12 +820,199 @@ describe('API Flow (e2e)', () => {
     });
 
     it('DELETE /api/orders/:id - success as admin', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
-      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
-      jest.spyOn(prismaService.order, 'delete').mockResolvedValue(mockOrder as any);
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.order, 'findUnique')
+        .mockResolvedValue(mockOrder as any);
+      jest
+        .spyOn(prismaService.order, 'delete')
+        .mockResolvedValue(mockOrder as any);
 
       return request(app.getHttpServer())
         .delete('/api/orders/50')
+        .set('Cookie', adminCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
+
+  describe('Image Endpoints', () => {
+    let adminCookie: string[];
+    let userCookie: string[];
+
+    const mockImage = {
+      id: 100,
+      productId: 1,
+      publicId: 'folder/img1',
+      urls: 'https://cloudinary.com/folder/img1.jpg',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockProduct = {
+      id: 1,
+      categoryId: 1,
+      name: 'Product A',
+      description: 'Desc',
+      price: 10.0,
+      type: 'REGULAR',
+      stock: 10,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeAll(async () => {
+      // Login Admin
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockAdminUser as any);
+      const adminRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminRes.headers['set-cookie'];
+
+      // Login User
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.user, 'update')
+        .mockResolvedValue(mockNormalUser as any);
+      const userRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userRes.headers['set-cookie'];
+    });
+
+    it('POST /api/images - fail as user', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .post('/api/images')
+        .set('Cookie', userCookie)
+        .attach('image', Buffer.from('mock file'), 'test.jpg')
+        .field('productId', 1)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('POST /api/images - fail with no file', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
+
+      return request(app.getHttpServer())
+        .post('/api/images')
+        .set('Cookie', adminCookie)
+        .field('productId', 1)
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('POST /api/images - success upload single image as admin', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.product, 'findUnique')
+        .mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.image, 'create').mockResolvedValue(mockImage);
+
+      return request(app.getHttpServer())
+        .post('/api/images')
+        .set('Cookie', adminCookie)
+        .attach('image', Buffer.from('mock file'), 'test.jpg')
+        .field('productId', 1)
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+          expect(res.body.data[0].id).toBe(100);
+        });
+    });
+
+    it('GET /api/images - success', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.image, 'findMany')
+        .mockResolvedValue([mockImage]);
+
+      return request(app.getHttpServer())
+        .get('/api/images')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/images/:id - success', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockNormalUser as any);
+      jest
+        .spyOn(prismaService.image, 'findUnique')
+        .mockResolvedValue(mockImage);
+
+      return request(app.getHttpServer())
+        .get('/api/images/100')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(100);
+        });
+    });
+
+    it('PATCH /api/images/:id - success as admin', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.image, 'findMany')
+        .mockResolvedValue([mockImage]);
+      jest.spyOn(prismaService.image, 'update').mockResolvedValue({
+        ...mockImage,
+        urls: 'https://cloudinary.com/folder/img1-updated.jpg',
+      });
+
+      return request(app.getHttpServer())
+        .patch('/api/images/100')
+        .set('Cookie', adminCookie)
+        .attach('image', Buffer.from('updated file'), 'updated.jpg')
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data[0].urls).toContain('updated');
+        });
+    });
+
+    it('DELETE /api/images/:id - success as admin', async () => {
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockResolvedValue(mockAdminUser as any);
+      jest
+        .spyOn(prismaService.image, 'findMany')
+        .mockResolvedValue([mockImage]);
+      jest
+        .spyOn(prismaService.image, 'deleteMany')
+        .mockResolvedValue({ count: 1 });
+
+      return request(app.getHttpServer())
+        .delete('/api/images/100')
         .set('Cookie', adminCookie)
         .expect(HttpStatus.OK)
         .expect((res) => {

@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ErrorService {
-//   isCloudinaryError(error: any): error is UploadApiErrorResponse {
-//     return (
-//       error &&
-//       typeof error === 'object' &&
-//       'http_code' in error &&
-//       'message' in error &&
-//       typeof error.message === 'string'
-//     );
-//   }
+  //   isCloudinaryError(error: any): error is UploadApiErrorResponse {
+  //     return (
+  //       error &&
+  //       typeof error === 'object' &&
+  //       'http_code' in error &&
+  //       'message' in error &&
+  //       typeof error.message === 'string'
+  //     );
+  //   }
   mapStatusToCode(status: number): string {
     switch (status) {
       case 400:

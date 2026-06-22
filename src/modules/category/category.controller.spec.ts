@@ -66,7 +66,10 @@ describe('CategoryController', () => {
 
   describe('create', () => {
     it('should call CategoryService.create and return formatted response', async () => {
-      const payload = { name: 'Electronics', description: 'Electronic devices' };
+      const payload = {
+        name: 'Electronics',
+        description: 'Electronic devices',
+      };
       const response = await controller.create(payload);
 
       expect(service.create).toHaveBeenCalledWith(payload);

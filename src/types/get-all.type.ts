@@ -1,4 +1,4 @@
-import { TimeSortOption } from "./time-sort.type";
+import { TimeSortOption } from './time-sort.type';
 
 export type GetAllOrderItemParams = {
   limit: number;

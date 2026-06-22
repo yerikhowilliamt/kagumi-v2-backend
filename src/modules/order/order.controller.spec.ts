@@ -29,7 +29,7 @@ describe('OrderController', () => {
   const mockOrder = {
     id: 1,
     userId: 2,
-    totalPrice: new Prisma.Decimal(50.00),
+    totalPrice: new Prisma.Decimal(50.0),
     status: 'PENDING' as const,
     deliveryMethod: 'DELIVERY' as const,
     paymentMethod: 'TRANSFER' as const,
@@ -114,7 +114,11 @@ describe('OrderController', () => {
     it('should return order details', async () => {
       const response = await controller.findById(mockUser, 1);
 
-      expect(service.findById).toHaveBeenCalledWith(1, mockUser.id, mockUser.role);
+      expect(service.findById).toHaveBeenCalledWith(
+        1,
+        mockUser.id,
+        mockUser.role,
+      );
       expect(response.success).toBe(true);
       expect(response.data).toEqual(mockOrder);
     });
@@ -125,7 +129,12 @@ describe('OrderController', () => {
       const payload = { status: 'CANCELED' as const };
       const response = await controller.update(mockUser, 1, payload);
 
-      expect(service.update).toHaveBeenCalledWith(1, mockUser.id, mockUser.role, payload);
+      expect(service.update).toHaveBeenCalledWith(
+        1,
+        mockUser.id,
+        mockUser.role,
+        payload,
+      );
       expect(response.success).toBe(true);
     });
   });

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { LoggerService } from 'src/common/logger/logger.service';
@@ -10,7 +14,7 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TokenService {
-    constructor(
+  constructor(
     private readonly loggerService: LoggerService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,

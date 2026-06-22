@@ -1,4 +1,18 @@
-import { Controller, DefaultValuePipe, Delete, Get, HttpCode, HttpStatus, ParseIntPipe, Patch, Query, Res, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  ParseIntPipe,
+  Patch,
+  Query,
+  Res,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { UserService } from './user.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -20,7 +34,7 @@ import { Response } from 'express';
 
 @Controller('users')
 export class UserController {
-    constructor(
+  constructor(
     private readonly loggerService: LoggerService,
     private readonly userService: UserService,
     private readonly responseService: ResponseService,
@@ -71,7 +85,7 @@ export class UserController {
     this.loggerService.info('USER', 'CONTROLLER', 'Fetching user initiated', {
       user_id: user.id,
     });
-    const result = await this.userService.detail(user.id, user.email!);
+    const result = await this.userService.detail(user.id, user.email);
     const message = generateMessage({
       action: 'fetch',
       subject: 'user',
@@ -164,7 +178,7 @@ export class UserController {
       user_id: user.id,
     });
     const result = await this.userService.logout(user.email);
-    
+
     this.cookies.clearCookies(res);
 
     this.loggerService.info('USER', 'CONTROLLER', 'User logout successfully', {

@@ -24,7 +24,7 @@ export class GoogleAuthGuard extends AuthGuard('google') {
 
       return activate;
     } catch (error) {
-    const err = error as Error;
+      const err = error as Error;
       this.loggerService.error(
         'GOOGLE GUARD',
         'GUARD',

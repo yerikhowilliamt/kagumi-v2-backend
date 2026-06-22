@@ -1,4 +1,15 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -18,7 +29,7 @@ import { JwtRefreshAuthGuard } from './guards/jwt-refresh.guard';
 
 @Controller('auth')
 export class AuthController {
-    constructor(
+  constructor(
     private readonly authService: AuthService,
     private readonly loggerService: LoggerService,
     private readonly responseService: ResponseService,
@@ -58,7 +69,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<WebResponse<UserResponse>> {
     this.loggerService.info('AUTH', 'CONTROLLER', 'Login initiated', {
-      email: request.email as string,
+      email: request.email,
     });
 
     const result = await this.authService.login(request);

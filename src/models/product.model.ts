@@ -1,7 +1,10 @@
-import { CategoryResponse, CategorySummary } from "./category.model";
-import { CustomOrderOptionResponse, CustomOrderOptionSummary } from "./custom-order-option.model";
-import { ImageResponse, ImageSummary } from "./image.model";
-import { OrderItemResponse, OrderItemSummary } from "./order-item.model";
+import { CategoryResponse, CategorySummary } from './category.model';
+import {
+  CustomOrderOptionResponse,
+  CustomOrderOptionSummary,
+} from './custom-order-option.model';
+import { ImageResponse, ImageSummary } from './image.model';
+import { OrderItemResponse, OrderItemSummary } from './order-item.model';
 
 export class ProductResponse {
   id: number;
@@ -31,7 +34,18 @@ export class ProductResponse {
     updatedAt: string;
     category: CategoryResponse;
   }) {
-    const { id, categoryId, name, description, price, type, stock, createdAt, updatedAt, category } = params;
+    const {
+      id,
+      categoryId,
+      name,
+      description,
+      price,
+      type,
+      stock,
+      createdAt,
+      updatedAt,
+      category,
+    } = params;
     this.id = id;
     this.categoryId = categoryId;
     this.name = name;
@@ -49,9 +63,9 @@ export class ProductResponse {
 }
 
 export enum ProductType {
-  REGULAR = "REGULAR",
-  DAILY_BAKE = "DAILY_BAKE",
-  CUSTOM = "CUSTOM",
+  REGULAR = 'REGULAR',
+  DAILY_BAKE = 'DAILY_BAKE',
+  CUSTOM = 'CUSTOM',
 }
 
 export class ProductSummary {

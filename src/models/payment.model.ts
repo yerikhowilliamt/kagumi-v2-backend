@@ -1,6 +1,6 @@
-import { Prisma } from "src/generated/prisma/client";
-import { OrderSummary } from "./order.model";
-import { UserSummary } from "./user.model";
+import { Prisma } from 'src/generated/prisma/client';
+import { OrderSummary } from './order.model';
+import { UserSummary } from './user.model';
 
 export class PaymentResponse {
   id: number;
@@ -34,7 +34,19 @@ export class PaymentResponse {
     order: OrderSummary;
     user: UserSummary;
   }) {
-    const { id, userId, orderId, transactionId, amount, paymentMethod, status, createdAt, updatedAt, order, user } = params;
+    const {
+      id,
+      userId,
+      orderId,
+      transactionId,
+      amount,
+      paymentMethod,
+      status,
+      createdAt,
+      updatedAt,
+      order,
+      user,
+    } = params;
     this.id = id;
     this.userId = userId;
     this.orderId = orderId;
@@ -85,7 +97,15 @@ export class PaymentSummary {
     paymentMethod: PaymentMethod;
     status: PaymentStatus;
   }) {
-    const { id, userId, orderId, transactionId, amount, paymentMethod, status } = params;
+    const {
+      id,
+      userId,
+      orderId,
+      transactionId,
+      amount,
+      paymentMethod,
+      status,
+    } = params;
     this.id = id;
     this.userId = userId;
     this.orderId = orderId;

@@ -1,4 +1,4 @@
-import { ProductResponse, ProductSummary } from "./product.model";
+import { ProductResponse, ProductSummary } from './product.model';
 
 export class ImageResponse {
   id: number;
@@ -19,7 +19,8 @@ export class ImageResponse {
     updatedAt: string;
     product: ProductResponse;
   }) {
-    const { id, productId, publicId, urls, createdAt, updatedAt, product } = params;
+    const { id, productId, publicId, urls, createdAt, updatedAt, product } =
+      params;
     this.id = id;
     this.productId = productId;
     this.publicId = publicId;

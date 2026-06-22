@@ -1,4 +1,10 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { LoggerService } from '../logger/logger.service';
 import { ErrorService } from './error.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -60,9 +66,9 @@ export class ErrorFilter<T> implements ExceptionFilter {
   } {
     // default
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
-    let errors: ErrorResponse[] = [];
-    let code = 'INTERNAL_SERVER_ERROR';
+    const message = 'Internal server error';
+    const errors: ErrorResponse[] = [];
+    const code = 'INTERNAL_SERVER_ERROR';
 
     // 🔹 ZOD
     if (exception instanceof ZodValidationException) {

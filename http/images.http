@@ -1,0 +1,118 @@
+### Variables
+@baseUrl = http://localhost:4015/api
+@adminEmail = admin@mail.com
+@adminPassword = Password123
+@userEmail = user@mail.com
+@userPassword = Password123
+
+### 1. Login Admin (to get cookies/tokens)
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### 2. Login User (to get cookies/tokens)
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+### 3. Create Image (Single) - ADMIN
+# Note: For REST Client, multipart/form-data upload can be simulated,
+# make sure to replace the boundary and productId as needed.
+POST {{baseUrl}}/images
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="productId"
+
+1
+--boundary
+Content-Disposition: form-data; name="image"; filename="cake.jpg"
+Content-Type: image/jpeg
+
+< ./cake.jpg
+--boundary--
+
+
+### 4. Create Images (Bulk) - ADMIN
+POST {{baseUrl}}/images
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="productId"
+
+1
+--boundary
+Content-Disposition: form-data; name="images"; filename="cake1.jpg"
+Content-Type: image/jpeg
+
+< ./cake1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="cake2.jpg"
+Content-Type: image/jpeg
+
+< ./cake2.jpg
+--boundary--
+
+
+### 5. Get All Images - USER/ADMIN
+GET {{baseUrl}}/images
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+
+### 6. Get Image by ID - USER/ADMIN
+GET {{baseUrl}}/images/1
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+
+### 7. Update Image (Single) - ADMIN
+PATCH {{baseUrl}}/images/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="image"; filename="cake-new.jpg"
+Content-Type: image/jpeg
+
+< ./cake-new.jpg
+--boundary--
+
+
+### 8. Update Images (Bulk) - ADMIN
+# Matches comma-separated IDs in path to corresponding files in order
+PATCH {{baseUrl}}/images/1,2
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="images"; filename="cake-new1.jpg"
+Content-Type: image/jpeg
+
+< ./cake-new1.jpg
+--boundary
+Content-Disposition: form-data; name="images"; filename="cake-new2.jpg"
+Content-Type: image/jpeg
+
+< ./cake-new2.jpg
+--boundary--
+
+
+### 9. Delete Image (Single) - ADMIN
+DELETE {{baseUrl}}/images/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+
+
+### 10. Delete Images (Bulk) - ADMIN
+DELETE {{baseUrl}}/images/1,2
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}

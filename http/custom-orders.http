@@ -1,0 +1,86 @@
+### Variables
+@baseUrl = http://localhost:4015/api
+@adminEmail = admin@mail.com
+@adminPassword = Password123
+@userEmail = user@mail.com
+@userPassword = Password123
+
+### 1. Login Admin (to get cookies/tokens)
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### 2. Login User (to get cookies/tokens)
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+### 3. Create Custom Order Option - ADMIN (Success)
+POST {{baseUrl}}/custom-orders
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "label": "Lilin Angka",
+  "placeholder": "Tulis angka lilin (misal: 25)",
+  "required": false
+}
+
+### 4. Create Custom Order Option - USER (Should fail with 403 Forbidden)
+POST {{baseUrl}}/custom-orders
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "label": "Lilin Angka",
+  "placeholder": "Tulis angka lilin (misal: 25)",
+  "required": false
+}
+
+### 5. Get All Custom Order Options - USER (Success)
+GET {{baseUrl}}/custom-orders
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+### 6. Get Custom Order Option by ID - USER (Success)
+GET {{baseUrl}}/custom-orders/1
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+### 7. Update Custom Order Option - ADMIN (Success)
+PATCH {{baseUrl}}/custom-orders/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "label": "Lilin Angka Ultah",
+  "required": true
+}
+
+### 8. Update Custom Order Option - USER (Should fail with 403 Forbidden)
+PATCH {{baseUrl}}/custom-orders/1
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "label": "Lilin Angka Ultah",
+  "required": true
+}
+
+### 9. Delete Custom Order Option - USER (Should fail with 403 Forbidden)
+DELETE {{baseUrl}}/custom-orders/1
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+### 10. Delete Custom Order Option - ADMIN (Success)
+DELETE {{baseUrl}}/custom-orders/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}

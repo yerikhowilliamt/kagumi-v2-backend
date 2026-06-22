@@ -133,6 +133,13 @@ All controller routes return responses wrapped in a standard `WebResponse` struc
 - `PATCH /api/payments/:id`: Update payment details (ADMIN only).
 - `DELETE /api/payments/:id`: Delete payment by ID (ADMIN only).
 
+### 📦 Order Items (`/api/order-items`)
+- `POST /api/order-items`: Create a new order item (USER & ADMIN). Supports uploading an optional design image using the `image` field. Recalculates parent order total.
+- `GET /api/order-items`: List order items (ADMIN sees all, USER sees only their own).
+- `GET /api/order-items/:id`: Get order item detail by ID (ADMIN & order owner only).
+- `PATCH /api/order-items/:id`: Update order item details (ADMIN only). Recalculates parent order total.
+- `DELETE /api/order-items/:id`: Delete order item by ID (ADMIN only). Recalculates parent order total.
+
 ---
 
 ## 🧪 Testing
@@ -158,3 +165,4 @@ For manual testing, you can use the **REST Client** extension in VS Code with th
 - [http/orders.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/orders.http) - Order CRUD & status tracking requests.
 - [http/images.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/images.http) - Image CRUD & upload requests.
 - [http/payments.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/payments.http) - Payment CRUD & transaction tracking requests.
+- [http/order-items.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/order-items.http) - Order Item CRUD & upload requests.

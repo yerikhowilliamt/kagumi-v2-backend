@@ -1,0 +1,119 @@
+### Variables
+@baseUrl = http://localhost:4015/api
+@adminEmail = admin@mail.com
+@adminPassword = Password123
+@userEmail = user@mail.com
+@userPassword = Password123
+
+### 1. Login Admin (to get cookies/tokens)
+# @name adminLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+### 2. Login User (to get cookies/tokens)
+# @name userLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{userEmail}}",
+  "password": "{{userPassword}}"
+}
+
+### 3. Create Order Item (Without Image) - USER
+POST {{baseUrl}}/order-items
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "productId": 1,
+  "quantity": 1,
+  "priceEach": 15000,
+  "note": "Tanpa lilin"
+}
+
+### 4. Create Order Item (With Image Upload) - USER
+# Note: For REST Client, multipart/form-data upload can be simulated.
+# Adjust orderId, productId, and image filename as needed.
+POST {{baseUrl}}/order-items
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="orderId"
+
+1
+--boundary
+Content-Disposition: form-data; name="productId"
+
+1
+--boundary
+Content-Disposition: form-data; name="quantity"
+
+2
+--boundary
+Content-Disposition: form-data; name="priceEach"
+
+15000
+--boundary
+Content-Disposition: form-data; name="note"
+
+Tulisan: Happy Birthday
+--boundary
+Content-Disposition: form-data; name="image"; filename="custom-design.jpg"
+Content-Type: image/jpeg
+
+< ./scratch/custom-design.jpg
+--boundary--
+
+### 5. Get All Order Items - USER (only sees owned orders)
+GET {{baseUrl}}/order-items
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+### 6. Get All Order Items - ADMIN (sees all)
+GET {{baseUrl}}/order-items
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+
+### 7. Get Order Item by ID - USER
+GET {{baseUrl}}/order-items/1
+Authorization: Bearer {{userLogin.response.body.data.accessToken}}
+
+### 8. Update Order Item (No Image) - ADMIN
+PATCH {{baseUrl}}/order-items/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 5,
+  "note": "Updated note by Admin"
+}
+
+### 9. Update Order Item (With Image Upload) - ADMIN
+PATCH {{baseUrl}}/order-items/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="quantity"
+
+3
+--boundary
+Content-Disposition: form-data; name="note"
+
+Updated custom design note
+--boundary
+Content-Disposition: form-data; name="image"; filename="updated-design.jpg"
+Content-Type: image/jpeg
+
+< ./scratch/updated-design.jpg
+--boundary--
+
+### 10. Delete Order Item - ADMIN
+DELETE {{baseUrl}}/order-items/1
+Authorization: Bearer {{adminLogin.response.body.data.accessToken}}

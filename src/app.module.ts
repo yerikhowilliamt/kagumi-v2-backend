@@ -8,6 +8,7 @@ import { ProductModule } from './modules/product/product.module';
 import { OrderModule } from './modules/order/order.module';
 import { ImageModule } from './modules/image/image.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { OrderItemModule } from './modules/order-item/order-item.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     OrderModule,
     ImageModule,
     PaymentModule,
+    OrderItemModule,
   ],
   controllers: [],
   providers: [],

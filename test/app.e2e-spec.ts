@@ -1185,4 +1185,181 @@ describe('API Flow (e2e)', () => {
         });
     });
   });
+
+  describe('Order Item Endpoints', () => {
+    let userCookie: string[];
+    let adminCookie: string[];
+
+    const mockOrder = {
+      id: 50,
+      userId: 2,
+      totalPrice: 50.00,
+      status: 'PENDING',
+      deliveryMethod: 'DELIVERY',
+      paymentMethod: 'TRANSFER',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockProduct = {
+      id: 1,
+      name: 'Cake',
+      price: 15000,
+      stock: 10,
+    };
+
+    const mockOrderItem = {
+      id: 90,
+      orderId: 50,
+      productId: 1,
+      quantity: 2,
+      note: 'Tanpa lilin',
+      priceEach: 15000,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      product: mockProduct,
+      order: mockOrder,
+    };
+
+    beforeAll(async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockNormalUser as any);
+      const userRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'user@mail.com', password: passwordPlain });
+      userCookie = userRes.headers['set-cookie'];
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockAdminUser as any);
+      const adminRes = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({ email: 'admin@mail.com', password: passwordPlain });
+      adminCookie = adminRes.headers['set-cookie'];
+    });
+
+    it('POST /api/order-items - success', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService.orderItem, 'create').mockResolvedValue(mockOrderItem as any);
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
+      jest.spyOn(prismaService.order, 'update').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .post('/api/order-items')
+        .set('Cookie', userCookie)
+        .send({
+          orderId: 50,
+          productId: 1,
+          quantity: 2,
+          priceEach: 15000,
+          note: 'Tanpa lilin',
+        })
+        .expect(HttpStatus.CREATED)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(90);
+        });
+    });
+
+    it('GET /api/order-items - success as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
+
+      return request(app.getHttpServer())
+        .get('/api/order-items')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data).toHaveLength(1);
+        });
+    });
+
+    it('GET /api/order-items/:id - success as owner', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(mockOrderItem as any);
+
+      return request(app.getHttpServer())
+        .get('/api/order-items/90')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.id).toBe(90);
+        });
+    });
+
+    it('GET /api/order-items/:id - fail as non-owner user', async () => {
+      const otherOrder = { ...mockOrder, userId: 3 };
+      const otherItem = { ...mockOrderItem, order: otherOrder };
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+      jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(otherItem as any);
+
+      return request(app.getHttpServer())
+        .get('/api/order-items/90')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('PATCH /api/order-items/:id - fail as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/order-items/90')
+        .set('Cookie', userCookie)
+        .send({ quantity: 5 })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('PATCH /api/order-items/:id - success as admin', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(mockOrderItem as any);
+      jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.orderItem, 'update').mockResolvedValue({ ...mockOrderItem, quantity: 5 } as any);
+      jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
+      jest.spyOn(prismaService.order, 'update').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .patch('/api/order-items/90')
+        .set('Cookie', adminCookie)
+        .send({ quantity: 5 })
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+          expect(res.body.data.quantity).toBe(5);
+        });
+    });
+
+    it('DELETE /api/order-items/:id - fail as user', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockNormalUser as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/order-items/90')
+        .set('Cookie', userCookie)
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('DELETE /api/order-items/:id - success as admin', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockAdminUser as any);
+      jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(mockOrderItem as any);
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService.product, 'update').mockResolvedValue(mockProduct as any);
+      jest.spyOn(prismaService.orderItem, 'delete').mockResolvedValue(mockOrderItem as any);
+      jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([] as any);
+      jest.spyOn(prismaService.order, 'update').mockResolvedValue(mockOrder as any);
+
+      return request(app.getHttpServer())
+        .delete('/api/order-items/90')
+        .set('Cookie', adminCookie)
+        .expect(HttpStatus.OK)
+        .expect((res) => {
+          expect(res.body.success).toBe(true);
+        });
+    });
+  });
 });

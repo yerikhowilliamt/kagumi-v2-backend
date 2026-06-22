@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -14,6 +15,7 @@ import { PaymentValidation } from './payment.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 
+@ApiTags('Payments')
 @Controller('payments')
 @UseGuards(JwtAccessAuthGuard)
 export class PaymentController {

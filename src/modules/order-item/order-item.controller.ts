@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { OrderItemService } from './order-item.service';
 import { LoggerService } from 'src/common/logger/logger.service';
@@ -28,6 +29,7 @@ import { OrderItemValidation } from './order-item.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 
+@ApiTags('Order Items')
 @Controller('order-items')
 @UseGuards(JwtAccessAuthGuard)
 export class OrderItemController {

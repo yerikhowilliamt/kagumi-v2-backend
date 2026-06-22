@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { CustomOrderOptionService } from './custom-order-option.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -23,6 +24,7 @@ import { CustomOrderOptionValidation } from './custom-order-option.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 
+@ApiTags('Custom Orders')
 @Controller('custom-orders')
 @UseGuards(JwtAccessAuthGuard)
 export class CustomOrderOptionController {

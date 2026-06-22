@@ -94,14 +94,23 @@ export class OrderService {
           },
         });
 
-        await tx.product.update({
-          where: { id: item.productId },
+        const updatedProduct = await tx.product.updateMany({
+          where: { 
+            id: item.productId,
+            stock: { gte: item.quantity },
+          },
           data: {
             stock: {
               decrement: item.quantity,
             },
           },
         });
+
+        if (updatedProduct.count === 0) {
+          throw new BadRequestException(
+            `Insufficient stock for product id: ${item.productId}`,
+          );
+        }
       }
 
       return newOrder;

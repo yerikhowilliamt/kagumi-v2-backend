@@ -74,6 +74,7 @@ describe('OrderService', () => {
             product: {
               findUnique: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn(),
             },
             order: {
               create: jest.fn(),
@@ -141,6 +142,7 @@ describe('OrderService', () => {
         .spyOn(prismaService.orderItem, 'create')
         .mockResolvedValue({} as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.product, 'updateMany').mockResolvedValue({ count: 1 } as any);
       jest
         .spyOn(prismaService.order, 'findUnique')
         .mockResolvedValue(mockOrder);

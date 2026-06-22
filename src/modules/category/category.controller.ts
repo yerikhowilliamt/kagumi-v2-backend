@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -24,6 +25,7 @@ import { JwtAccessAuthGuard } from '../auth/guards/jwt-access.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/role.decorator';
 
+@ApiTags('Categories')
 @Controller('categories')
 @UseGuards(JwtAccessAuthGuard)
 export class CategoryController {

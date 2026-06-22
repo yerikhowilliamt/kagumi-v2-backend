@@ -13,6 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { UserService } from './user.service';
 import { ResponseService } from 'src/helpers/response/response.service';
@@ -32,6 +33,7 @@ import { UpdateProfileRequest } from './dto/update-profile.dto';
 import { UpdatePasswordRequest } from './dto/update-password.dto';
 import { Response } from 'express';
 
+@ApiTags('Users')
 @Controller('users')
 export class UserController {
   constructor(

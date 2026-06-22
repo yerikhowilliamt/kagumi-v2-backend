@@ -23,7 +23,7 @@ export class OrderService {
     });
 
     // 1. Validate all products and check stocks
-    const itemsWithProducts = [];
+    const itemsWithProducts: any[] = [];
     for (const item of payload.items) {
       const product = await this.prismaService.product.findUnique({
         where: { id: item.productId },

@@ -46,7 +46,7 @@ export class ImageService {
     }
 
     // 2. Upload each file to Cloudinary and create in Database
-    const createdImages = [];
+    const createdImages: any[] = [];
     for (const file of files) {
       try {
         const uploadResult = await this.cloudinaryService.uploadFile(file);
@@ -141,7 +141,7 @@ export class ImageService {
     // Map existing images by ID for easy lookup matching the array order
     const imageMap = new Map(existingImages.map((img) => [img.id, img]));
 
-    const updatedImages = [];
+    const updatedImages: any[] = [];
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
       const file = files[i];

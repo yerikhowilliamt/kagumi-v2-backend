@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import 'multer';
 import cookieParser = require('cookie-parser');
 import dotenv from 'dotenv';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 dotenv.config();
 
 async function bootstrap() {
@@ -10,6 +12,15 @@ async function bootstrap() {
   const port = process.env.PORT ?? 4015;
   app.use(cookieParser('token'));
   app.setGlobalPrefix('api');
+
+  const config = new DocumentBuilder()
+    .setTitle('Kagumi API')
+    .setDescription('The Kagumi v2 API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const documentFactory = () => cleanupOpenApiDoc(SwaggerModule.createDocument(app, config));
+  SwaggerModule.setup('api/docs', app, documentFactory);
 
   app.enableCors({
     origin: 'http://localhost:3000',

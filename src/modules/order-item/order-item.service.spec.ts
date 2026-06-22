@@ -81,6 +81,7 @@ describe('OrderItemService', () => {
             product: {
               findUnique: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn(),
             },
             order: {
               findUnique: jest.fn(),
@@ -172,6 +173,7 @@ describe('OrderItemService', () => {
       jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
       jest.spyOn(prismaService.orderItem, 'create').mockResolvedValue(mockOrderItem as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.product, 'updateMany').mockResolvedValue({ count: 1 } as any);
       jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
       jest.spyOn(prismaService.order, 'update').mockResolvedValue({} as any);
 
@@ -249,13 +251,15 @@ describe('OrderItemService', () => {
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
       jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
+      jest.spyOn(prismaService.product, 'updateMany').mockResolvedValue({ count: 1 } as any);
       jest.spyOn(prismaService.orderItem, 'update').mockResolvedValue({ ...mockOrderItem, quantity: 3 } as any);
       jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
       jest.spyOn(prismaService.order, 'update').mockResolvedValue({} as any);
 
       const result = await service.update(90, { quantity: 3 });
       expect(result.quantity).toBe(3);
-      expect(prismaService.product.update).toHaveBeenCalledTimes(2); // Increments old qty, decrements new qty
+      expect(prismaService.product.update).toHaveBeenCalledTimes(1); // Increments old qty
+      expect(prismaService.product.updateMany).toHaveBeenCalledTimes(1); // Decrements new qty
     });
   });
 

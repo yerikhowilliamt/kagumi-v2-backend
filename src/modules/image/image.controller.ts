@@ -13,6 +13,7 @@ import {
   UploadedFiles,
   BadRequestException,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ImageService } from './image.service';
 import { LoggerService } from 'src/common/logger/logger.service';
@@ -26,6 +27,7 @@ import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 import { ImageValidation } from './image.validation';
 
+@ApiTags('Images')
 @Controller('images')
 @UseGuards(JwtAccessAuthGuard)
 export class ImageController {

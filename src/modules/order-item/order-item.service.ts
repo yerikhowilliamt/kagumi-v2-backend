@@ -106,14 +106,21 @@ export class OrderItemService {
         },
       });
 
-      await tx.product.update({
-        where: { id: payload.productId },
+      const updatedProduct = await tx.product.updateMany({
+        where: { 
+          id: payload.productId,
+          stock: { gte: payload.quantity },
+        },
         data: {
           stock: {
             decrement: payload.quantity,
           },
         },
       });
+
+      if (updatedProduct.count === 0) {
+        throw new BadRequestException(`Insufficient stock for product id: ${payload.productId}`);
+      }
 
       await this.recalculateOrderTotal(tx, payload.orderId);
 
@@ -297,14 +304,21 @@ export class OrderItemService {
       });
 
       // Deduct stock on new (or same) product
-      await tx.product.update({
-        where: { id: targetProductId },
+      const updatedProduct = await tx.product.updateMany({
+        where: { 
+          id: targetProductId,
+          stock: { gte: newQty },
+        },
         data: {
           stock: {
             decrement: newQty,
           },
         },
       });
+
+      if (updatedProduct.count === 0) {
+        throw new BadRequestException(`Insufficient stock for product id: ${targetProductId}`);
+      }
 
       const updated = await tx.orderItem.update({
         where: { id },

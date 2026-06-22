@@ -59,7 +59,9 @@ src/
 │   ├── category/            # Category module (CRUD)
 │   ├── product/             # Product module (CRUD)
 │   ├── order/               # Order module (CRUD)
-│   └── payment/             # Payment module (CRUD)
+│   ├── order-item/          # Order Item module (CRUD)
+│   ├── custom-order-option/ # Custom Order Option module (CRUD)
+│   ├── payment/             # Payment module (CRUD)
 │   └── user/                # User management
 ```
 
@@ -140,6 +142,13 @@ All controller routes return responses wrapped in a standard `WebResponse` struc
 - `PATCH /api/order-items/:id`: Update order item details (ADMIN only). Recalculates parent order total.
 - `DELETE /api/order-items/:id`: Delete order item by ID (ADMIN only). Recalculates parent order total.
 
+### ⚙️ Custom Order Options (`/api/custom-orders`)
+- `POST /api/custom-orders`: Create a new custom order option (ADMIN only).
+- `GET /api/custom-orders`: List all custom order options (ADMIN & USER).
+- `GET /api/custom-orders/:id`: Get custom order option detail by ID (ADMIN & USER).
+- `PATCH /api/custom-orders/:id`: Update custom order option details (ADMIN only).
+- `DELETE /api/custom-orders/:id`: Delete custom order option by ID (ADMIN only).
+
 ---
 
 ## 🧪 Testing
@@ -166,3 +175,4 @@ For manual testing, you can use the **REST Client** extension in VS Code with th
 - [http/images.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/images.http) - Image CRUD & upload requests.
 - [http/payments.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/payments.http) - Payment CRUD & transaction tracking requests.
 - [http/order-items.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/order-items.http) - Order Item CRUD & upload requests.
+- [http/custom-orders.http](file:///c:/Users/Yerikho/JavaScript/Kagumi-v2/backend/http/custom-orders.http) - Custom Order Option CRUD requests.

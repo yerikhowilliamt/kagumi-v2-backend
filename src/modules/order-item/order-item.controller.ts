@@ -28,6 +28,9 @@ import { UpdateOrderItemRequest } from './dto/update-order-item.dto';
 import { OrderItemValidation } from './order-item.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Order Items')
 @Controller('order-items')
@@ -85,7 +88,10 @@ export class OrderItemController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(@Auth() user: User): Promise<WebResponse<any[]>> {
+  async findAll(
+    @Auth() user: User,
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info(
       'ORDER_ITEM',
       'CONTROLLER',
@@ -96,7 +102,7 @@ export class OrderItemController {
       },
     );
 
-    const result = await this.orderItemService.findAll(user.id, user.role);
+    const result = await this.orderItemService.findAll(user.id, user.role, request);
     const message = generateMessage({ action: 'fetch', subject: 'order items' });
 
     this.loggerService.info(
@@ -104,14 +110,16 @@ export class OrderItemController {
       'CONTROLLER',
       'Order items fetched successfully',
       {
-        count: result.length,
+        count: result.data.length,
       },
     );
 
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 

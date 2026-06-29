@@ -3,15 +3,20 @@ import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreatePaymentRequest } from './dto/create-payment.dto';
 import { UpdatePaymentRequest } from './dto/update-payment.dto';
+import { Prisma, Payment } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
+import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 
 @Injectable()
 export class PaymentService {
   constructor(
     private readonly loggerService: LoggerService,
     private readonly prismaService: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(userId: number, role: string, payload: CreatePaymentRequest) {
+  async create(userId: number, role: string, payload: CreatePaymentRequest, paymentProofImage?: any) {
     this.loggerService.info('PAYMENT', 'SERVICE', 'Creating payment initiated', { userId, payload });
 
     // 1. Verify that the order exists
@@ -36,7 +41,19 @@ export class PaymentService {
       throw new ForbiddenException('You are not authorized to make a payment for this order');
     }
 
-    // 3. Create the payment record
+    // 3. Handle file upload if paymentProofImage exists
+    let paymentProofUrl = payload.paymentProof;
+    if (paymentProofImage) {
+      try {
+        const uploadResult = await this.cloudinaryService.uploadFile(paymentProofImage);
+        paymentProofUrl = uploadResult.secure_url;
+      } catch (error) {
+        this.loggerService.error('PAYMENT', 'SERVICE', 'Failed to upload payment proof to Cloudinary', { error });
+        throw new BadRequestException('Failed to upload payment proof');
+      }
+    }
+
+    // 4. Create the payment record
     const payment = await this.prismaService.payment.create({
       data: {
         orderId: payload.orderId,
@@ -45,7 +62,7 @@ export class PaymentService {
         amount: payload.amount,
         paymentMethod: payload.paymentMethod,
         status: payload.status || 'PENDING',
-        paymentProof: payload.paymentProof,
+        paymentProof: paymentProofUrl,
         metadata: payload.metadata || undefined,
       },
       include: {
@@ -64,31 +81,58 @@ export class PaymentService {
     return payment;
   }
 
-  async findAll(userId: number, role: string) {
-    this.loggerService.info('PAYMENT', 'SERVICE', 'Fetching payments initiated', { userId, role });
+  async findAll(userId: number, role: string, request: PaginationRequest): Promise<PaginatedResponse<Payment>> {
+    this.loggerService.info('PAYMENT', 'SERVICE', 'Fetching payments initiated', { userId, role, request });
 
     const isAdmin = role === 'ADMIN';
-    const where = isAdmin ? {} : { userId };
+    const where: Prisma.PaymentWhereInput = isAdmin ? {} : { userId };
 
-    const payments = await this.prismaService.payment.findMany({
-      where,
-      include: {
-        order: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const skip = (request.page - 1) * request.size;
+
+    if (request.search) {
+      if (['PENDING', 'SUCCESS', 'FAILED', 'REFUNDED'].includes(request.search.toUpperCase())) {
+         where.status = request.search.toUpperCase() as any;
+      }
+    }
+
+    const orderBy: Prisma.PaymentOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    const [totalData, payments] = await this.prismaService.$transaction([
+      this.prismaService.payment.count({ where }),
+      this.prismaService.payment.findMany({
+        where,
+        skip,
+        take: request.size,
+        include: {
+          order: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy,
+      }),
+    ]);
 
-    this.loggerService.info('PAYMENT', 'SERVICE', 'Payments fetched successfully', { count: payments.length });
-    return payments;
+    this.loggerService.info('PAYMENT', 'SERVICE', 'Payments fetched successfully', { count: payments.length, totalData });
+
+    return {
+      data: payments as any,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number, userId: number, role: string) {
@@ -123,7 +167,7 @@ export class PaymentService {
     return payment;
   }
 
-  async update(id: number, userId: number, role: string, payload: UpdatePaymentRequest) {
+  async update(id: number, userId: number, role: string, payload: UpdatePaymentRequest, paymentProofImage?: any) {
     this.loggerService.info('PAYMENT', 'SERVICE', 'Updating payment initiated', { id, userId, role, payload });
 
     if (role !== 'ADMIN') {
@@ -131,12 +175,29 @@ export class PaymentService {
     }
 
     // Verify payment exists
-    const payment = await this.prismaService.payment.findUnique({
+    const existingPayment = await this.prismaService.payment.findUnique({
       where: { id },
     });
 
-    if (!payment) {
+    if (!existingPayment) {
       throw new NotFoundException('Payment not found');
+    }
+
+    let paymentProofUrl = payload.paymentProof !== undefined ? payload.paymentProof : existingPayment.paymentProof;
+    if (paymentProofImage) {
+      try {
+        // Delete old image if it was on Cloudinary
+        if (existingPayment.paymentProof && existingPayment.paymentProof.includes('cloudinary')) {
+          const urlParts = existingPayment.paymentProof.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          const publicId = filename.split('.')[0];
+          if (publicId) await this.cloudinaryService.destroyFile(publicId);
+        }
+        const uploadResult = await this.cloudinaryService.uploadFile(paymentProofImage);
+        paymentProofUrl = uploadResult.secure_url;
+      } catch (error) {
+        this.loggerService.error('PAYMENT', 'SERVICE', 'Failed to upload payment proof to Cloudinary', { error });
+      }
     }
 
     const updated = await this.prismaService.payment.update({
@@ -147,7 +208,7 @@ export class PaymentService {
         amount: payload.amount,
         paymentMethod: payload.paymentMethod,
         status: payload.status,
-        paymentProof: payload.paymentProof,
+        paymentProof: paymentProofUrl,
         metadata: payload.metadata || undefined,
         failureReason: payload.failureReason,
         refundAmount: payload.refundAmount,

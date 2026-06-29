@@ -45,7 +45,10 @@ describe('OrderItemController', () => {
           provide: OrderItemService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockOrderItem),
-            findAll: jest.fn().mockResolvedValue([mockOrderItem]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockOrderItem],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockOrderItem),
             update: jest.fn().mockResolvedValue(mockOrderItem),
             remove: jest.fn().mockResolvedValue(mockOrderItem),
@@ -103,9 +106,10 @@ describe('OrderItemController', () => {
 
   describe('findAll', () => {
     it('should return list of order items', async () => {
-      const response = await controller.findAll(mockUser);
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(mockUser, request);
 
-      expect(service.findAll).toHaveBeenCalledWith(mockUser.id, mockUser.role);
+      expect(service.findAll).toHaveBeenCalledWith(mockUser.id, mockUser.role, request);
       expect(response.success).toBe(true);
       expect(response.data).toHaveLength(1);
     });

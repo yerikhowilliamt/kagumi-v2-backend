@@ -9,6 +9,9 @@ import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
 import { CreateOrderItemRequest } from './dto/create-order-item.dto';
 import { UpdateOrderItemRequest } from './dto/update-order-item.dto';
+import { Prisma, OrderItem } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class OrderItemService {
@@ -134,37 +137,66 @@ export class OrderItemService {
     return result;
   }
 
-  async findAll(userId: number, role: string) {
+  async findAll(userId: number, role: string, request: PaginationRequest): Promise<PaginatedResponse<OrderItem>> {
     this.loggerService.info('ORDER_ITEM', 'SERVICE', 'Fetching order items', {
       userId,
       role,
+      request,
     });
 
-    const where = role === 'ADMIN' ? {} : { order: { userId } };
+    const where: Prisma.OrderItemWhereInput = role === 'ADMIN' ? {} : { order: { userId } };
 
-    const items = await this.prismaService.orderItem.findMany({
-      where,
-      include: {
-        product: true,
-        order: {
-          select: {
-            id: true,
-            userId: true,
-            status: true,
-            createdAt: true,
+    const skip = (request.page - 1) * request.size;
+
+    if (request.search) {
+      where.note = {
+        contains: request.search,
+        mode: 'insensitive',
+      };
+    }
+
+    const orderBy: Prisma.OrderItemOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    const [totalData, items] = await this.prismaService.$transaction([
+      this.prismaService.orderItem.count({ where }),
+      this.prismaService.orderItem.findMany({
+        where,
+        skip,
+        take: request.size,
+        include: {
+          product: true,
+          order: {
+            select: {
+              id: true,
+              userId: true,
+              status: true,
+              createdAt: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy,
+      }),
+    ]);
 
     this.loggerService.info('ORDER_ITEM', 'SERVICE', 'Order items fetched', {
       count: items.length,
+      totalData,
     });
 
-    return items;
+    return {
+      data: items as any,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number, userId: number, role: string) {

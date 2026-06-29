@@ -8,6 +8,9 @@ import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreateOrderRequest } from './dto/create-order.dto';
 import { UpdateOrderRequest } from './dto/update-order.dto';
+import { Prisma, Order } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class OrderService {
@@ -134,40 +137,134 @@ export class OrderService {
     return result;
   }
 
-  async findAll(userId: number, role: string) {
+  async getStats() {
+    this.loggerService.info('ORDER', 'SERVICE', 'Fetching order stats initiated');
+
+    const revenueAggregation = await this.prismaService.order.aggregate({
+      where: { status: { in: ['COMPLETED', 'PAID'] } },
+      _sum: { totalPrice: true },
+    });
+    const totalRevenue = Number(revenueAggregation._sum.totalPrice || 0);
+
+    const activeOrders = await this.prismaService.order.count({
+      where: { status: { in: ['PENDING', 'PROCESSING', 'DELIVERING'] } },
+    });
+
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+
+    const recentOrders = await this.prismaService.order.findMany({
+      where: {
+        status: { in: ['COMPLETED', 'PAID'] },
+        createdAt: { gte: sixMonthsAgo },
+      },
+      select: { totalPrice: true, createdAt: true },
+    });
+
+    const monthlyRevenueMap = new Map<string, number>();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthYear = `${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+      monthlyRevenueMap.set(monthYear, 0);
+    }
+
+    recentOrders.forEach((order) => {
+      const d = new Date(order.createdAt);
+      const monthYear = `${d.toLocaleString('id-ID', { month: 'long' })} ${d.getFullYear()}`;
+      if (monthlyRevenueMap.has(monthYear)) {
+        monthlyRevenueMap.set(monthYear, monthlyRevenueMap.get(monthYear)! + Number(order.totalPrice));
+      }
+    });
+
+    const monthlyRevenue = Array.from(monthlyRevenueMap.entries()).map(([month, revenue]) => ({
+      month,
+      revenue,
+    }));
+
+    const recent5Orders = await this.prismaService.order.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    return {
+      totalRevenue,
+      activeOrders,
+      monthlyRevenue,
+      recentOrders: recent5Orders,
+    };
+  }
+
+  async findAll(userId: number, role: string, request: PaginationRequest): Promise<PaginatedResponse<Order>> {
     this.loggerService.info('ORDER', 'SERVICE', 'Fetching orders initiated', {
       userId,
       role,
+      request,
     });
 
     const isAdmin = role === 'ADMIN';
-    const where = isAdmin ? {} : { userId };
+    const where: Prisma.OrderWhereInput = isAdmin ? {} : { userId };
 
-    const orders = await this.prismaService.order.findMany({
-      where,
-      include: {
-        orderItems: {
-          include: {
-            product: true,
+    const skip = (request.page - 1) * request.size;
+
+    // Filter - Search bisa dicari dari user name atau status, tapi Order tdk punya name.
+    // Kita abaikan search atau cari by status jika string persis
+    if (request.search) {
+      if (['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELED'].includes(request.search.toUpperCase())) {
+         where.status = request.search.toUpperCase() as any;
+      }
+    }
+
+    const orderBy: Prisma.OrderOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    const [totalData, orders] = await this.prismaService.$transaction([
+      this.prismaService.order.count({ where }),
+      this.prismaService.order.findMany({
+        where,
+        skip,
+        take: request.size,
+        include: {
+          orderItems: {
+            include: {
+              product: true,
+            },
           },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
+          payment: true,
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy,
+      }),
+    ]);
 
     this.loggerService.info('ORDER', 'SERVICE', 'Orders fetched successfully', {
       count: orders.length,
+      totalData,
     });
-    return orders;
+
+    return {
+      data: orders as any, // Cast if needed for return type match
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number, userId: number, role: string) {
@@ -193,6 +290,7 @@ export class OrderService {
             email: true,
           },
         },
+        payment: true,
       },
     });
 

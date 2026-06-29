@@ -30,7 +30,10 @@ describe('ProductController', () => {
           provide: ProductService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockProduct),
-            findAll: jest.fn().mockResolvedValue([mockProduct]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockProduct],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockProduct),
             update: jest.fn().mockResolvedValue(mockProduct),
             remove: jest.fn().mockResolvedValue(mockProduct),
@@ -89,9 +92,10 @@ describe('ProductController', () => {
 
   describe('findAll', () => {
     it('should return list of products', async () => {
-      const response = await controller.findAll();
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(request);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(request);
       expect(response.success).toBe(true);
       expect(response.data).toHaveLength(1);
     });

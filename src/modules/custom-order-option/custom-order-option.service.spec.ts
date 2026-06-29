@@ -56,7 +56,14 @@ describe('CustomOrderOptionService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn(),
             },
+            $transaction: jest.fn((callback) => {
+              if (Array.isArray(callback)) {
+                return Promise.all(callback);
+              }
+              return callback();
+            }),
           },
         },
       ],
@@ -100,10 +107,11 @@ describe('CustomOrderOptionService', () => {
 
   describe('findAll', () => {
     it('should fetch all custom order options', async () => {
+      jest.spyOn(prismaService.customOrderOption, 'count').mockResolvedValue(1);
       jest.spyOn(prismaService.customOrderOption, 'findMany').mockResolvedValue([mockOption] as any);
 
-      const result = await service.findAll();
-      expect(result).toHaveLength(1);
+      const result = await service.findAll({ page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.customOrderOption.findMany).toHaveBeenCalled();
     });
   });

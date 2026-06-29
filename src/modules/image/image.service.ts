@@ -6,6 +6,9 @@ import {
 import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CloudinaryService } from 'src/common/cloudinary/cloudinary.service';
+import { Prisma, Image } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class ImageService {
@@ -83,11 +86,50 @@ export class ImageService {
     return createdImages;
   }
 
-  async findAll() {
-    this.loggerService.info('IMAGE', 'SERVICE', 'Fetching all images');
-    return this.prismaService.image.findMany({
-      orderBy: { id: 'asc' },
+  async findAll(request: PaginationRequest): Promise<PaginatedResponse<Image>> {
+    this.loggerService.info('IMAGE', 'SERVICE', 'Fetching all images', { request });
+
+    const skip = (request.page - 1) * request.size;
+
+    const where: Prisma.ImageWhereInput = {};
+    if (request.search) {
+      where.urls = {
+        contains: request.search,
+        mode: 'insensitive',
+      };
+    }
+
+    const orderBy: Prisma.ImageOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.id = 'desc';
+    }
+
+    const [totalData, images] = await this.prismaService.$transaction([
+      this.prismaService.image.count({ where }),
+      this.prismaService.image.findMany({
+        where,
+        skip,
+        take: request.size,
+        orderBy,
+      }),
+    ]);
+
+    this.loggerService.info('IMAGE', 'SERVICE', 'Images fetched successfully', {
+      count: images.length,
+      totalData,
     });
+
+    return {
+      data: images,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number) {

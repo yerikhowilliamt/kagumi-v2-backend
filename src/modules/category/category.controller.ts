@@ -14,7 +14,8 @@ import { ApiTags } from '@nestjs/swagger';
 import { CategoryService } from './category.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
-import { ZodBody } from 'src/common/validation/validation.decorator';
+import { Paging } from 'src/models/web.model';
+import { ZodBody, ZodQuery } from 'src/common/validation/validation.decorator';
 import { CreateCategoryRequest } from './dto/create-category.dto';
 import { UpdateCategoryRequest } from './dto/update-category.dto';
 import { CategoryValidation } from './category.validation';
@@ -24,10 +25,11 @@ import { Category } from 'src/generated/prisma/client';
 import { JwtAccessAuthGuard } from '../auth/guards/jwt-access.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/role.decorator';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
 
 @ApiTags('Categories')
 @Controller('categories')
-@UseGuards(JwtAccessAuthGuard)
 export class CategoryController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -37,7 +39,7 @@ export class CategoryController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async create(
     @ZodBody(CategoryValidation.CREATE) request: CreateCategoryRequest,
@@ -66,25 +68,29 @@ export class CategoryController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(): Promise<WebResponse<Category[]>> {
+  async findAll(
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<Category[]>> {
     this.loggerService.info(
       'CATEGORY',
       'CONTROLLER',
       'Fetch all categories request received',
     );
-    const result = await this.categoryService.findAll();
+    const result = await this.categoryService.findAll(request);
     const message = generateMessage({ action: 'fetch', subject: 'category' });
 
     this.loggerService.info(
       'CATEGORY',
       'CONTROLLER',
       'Categories fetched successfully',
-      { count: result.length },
+      { count: result.data.length },
     );
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 
@@ -117,7 +123,7 @@ export class CategoryController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -147,7 +153,7 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async remove(
     @Param('id', ParseIntPipe) id: number,

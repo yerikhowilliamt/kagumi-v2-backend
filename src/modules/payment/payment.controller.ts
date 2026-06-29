@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, ParseIntPipe, HttpCode, HttpStatus, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import { LoggerService } from 'src/common/logger/logger.service';
@@ -12,8 +12,12 @@ import { User } from 'src/generated/prisma/client';
 import { CreatePaymentRequest } from './dto/create-payment.dto';
 import { UpdatePaymentRequest } from './dto/update-payment.dto';
 import { PaymentValidation } from './payment.validation';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -29,14 +33,16 @@ export class PaymentController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(RoleGuard)
   @Roles('USER', 'ADMIN')
+  @UseInterceptors(FileInterceptor('paymentProof'))
   async create(
     @Auth() user: User,
     @ZodBody(PaymentValidation.CREATE) request: CreatePaymentRequest,
+    @UploadedFile() paymentProof?: any,
   ): Promise<WebResponse<any>> {
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Create payment request received', {
       userId: user.id,
     });
-    const result = await this.paymentService.create(user.id, user.role, request);
+    const result = await this.paymentService.create(user.id, user.role, request, paymentProof);
     const message = generateMessage({ action: 'create', subject: 'payment' });
 
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Payment created successfully', {
@@ -53,21 +59,26 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RoleGuard)
   @Roles('USER', 'ADMIN')
-  async findAll(@Auth() user: User): Promise<WebResponse<any[]>> {
+  async findAll(
+    @Auth() user: User,
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Fetch all payments request received', {
       userId: user.id,
       role: user.role,
     });
-    const result = await this.paymentService.findAll(user.id, user.role);
+    const result = await this.paymentService.findAll(user.id, user.role, request);
     const message = generateMessage({ action: 'fetch', subject: 'payments' });
 
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Payments fetched successfully', {
-      count: result.length,
+      count: result.data.length,
     });
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 
@@ -98,16 +109,18 @@ export class PaymentController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RoleGuard)
   @Roles('ADMIN')
+  @UseInterceptors(FileInterceptor('paymentProof'))
   async update(
     @Auth() user: User,
     @Param('id', ParseIntPipe) id: number,
     @ZodBody(PaymentValidation.UPDATE) request: UpdatePaymentRequest,
+    @UploadedFile() paymentProof?: any,
   ): Promise<WebResponse<any>> {
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Update payment request received', {
       id,
       userId: user.id,
     });
-    const result = await this.paymentService.update(id, user.id, user.role, request);
+    const result = await this.paymentService.update(id, user.id, user.role, request, paymentProof);
     const message = generateMessage({ action: 'update', subject: 'payment' });
 
     this.loggerService.info('PAYMENT', 'CONTROLLER', 'Payment updated successfully', { id });

@@ -51,7 +51,10 @@ describe('PaymentController', () => {
           provide: PaymentService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockPayment),
-            findAll: jest.fn().mockResolvedValue([mockPayment]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockPayment],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockPayment),
             update: jest.fn().mockResolvedValue(mockPayment),
             remove: jest.fn().mockResolvedValue(mockPayment),
@@ -108,9 +111,10 @@ describe('PaymentController', () => {
 
   describe('findAll', () => {
     it('should return list of payments', async () => {
-      const response = await controller.findAll(mockUser);
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(mockUser, request);
 
-      expect(service.findAll).toHaveBeenCalledWith(mockUser.id, mockUser.role);
+      expect(service.findAll).toHaveBeenCalledWith(mockUser.id, mockUser.role, request);
       expect(response.success).toBe(true);
       expect(response.data).toHaveLength(1);
     });

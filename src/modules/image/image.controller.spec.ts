@@ -36,7 +36,10 @@ describe('ImageController', () => {
           provide: ImageService,
           useValue: {
             create: jest.fn().mockResolvedValue([mockImage]),
-            findAll: jest.fn().mockResolvedValue([mockImage]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockImage],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockImage),
             update: jest.fn().mockResolvedValue([mockImage]),
             remove: jest.fn().mockResolvedValue([mockImage]),
@@ -93,8 +96,9 @@ describe('ImageController', () => {
 
   describe('findAll', () => {
     it('should return all images', async () => {
-      const response = await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(request);
+      expect(service.findAll).toHaveBeenCalledWith(request);
       expect(response.success).toBe(true);
       expect(response.data).toEqual([mockImage]);
     });

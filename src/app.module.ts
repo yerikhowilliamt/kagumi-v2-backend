@@ -10,6 +10,8 @@ import { ImageModule } from './modules/image/image.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { OrderItemModule } from './modules/order-item/order-item.module';
 import { CustomOrderOptionModule } from './modules/custom-order-option/custom-order-option.module';
+import { CartModule } from './modules/cart/cart.module';
+import { ReviewModule } from './modules/review/review.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { CustomOrderOptionModule } from './modules/custom-order-option/custom-or
     PaymentModule,
     OrderItemModule,
     CustomOrderOptionModule,
+    CartModule,
+    ReviewModule,
   ],
   controllers: [],
   providers: [],

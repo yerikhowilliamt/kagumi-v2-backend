@@ -112,6 +112,7 @@ export class CommonModule implements NestModule {
       .exclude(
         { path: '/api/auth/login', method: RequestMethod.POST },
         { path: '/api/auth/register', method: RequestMethod.POST },
+        { path: '/api/*patch', method: RequestMethod.GET }
       )
       .forRoutes({ path: '/api/*path', method: RequestMethod.ALL });
   }

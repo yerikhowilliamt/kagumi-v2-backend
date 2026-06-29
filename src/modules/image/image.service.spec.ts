@@ -67,7 +67,14 @@ describe('ImageService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
               deleteMany: jest.fn(),
+              count: jest.fn(),
             },
+            $transaction: jest.fn((callback) => {
+              if (Array.isArray(callback)) {
+                return Promise.all(callback);
+              }
+              return callback();
+            }),
           },
         },
         {
@@ -101,7 +108,7 @@ describe('ImageService', () => {
     it('should throw BadRequestException if files array is empty', async () => {
       jest
         .spyOn(prismaService.product, 'findUnique')
-        .mockResolvedValue(mockProduct);
+        .mockResolvedValue(mockProduct as any);
 
       await expect(service.create(1, [])).rejects.toThrow(BadRequestException);
     });
@@ -109,7 +116,7 @@ describe('ImageService', () => {
     it('should upload files and save them to the database', async () => {
       jest
         .spyOn(prismaService.product, 'findUnique')
-        .mockResolvedValue(mockProduct);
+        .mockResolvedValue(mockProduct as any);
       jest.spyOn(cloudinaryService, 'uploadFile').mockResolvedValue({
         public_id: 'folder/img1',
         secure_url: 'https://cloudinary.com/folder/img1.jpg',
@@ -128,11 +135,14 @@ describe('ImageService', () => {
   describe('findAll', () => {
     it('should return all images', async () => {
       jest
+        .spyOn(prismaService.image, 'count')
+        .mockResolvedValue(1);
+      jest
         .spyOn(prismaService.image, 'findMany')
         .mockResolvedValue([mockImage]);
 
-      const result = await service.findAll();
-      expect(result).toEqual([mockImage]);
+      const result = await service.findAll({ page: 1, size: 10 });
+      expect(result.data).toEqual([mockImage]);
     });
   });
 

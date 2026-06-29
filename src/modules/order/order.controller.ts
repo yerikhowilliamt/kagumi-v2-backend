@@ -24,7 +24,10 @@ import { CreateOrderRequest } from './dto/create-order.dto';
 import { UpdateOrderRequest } from './dto/update-order.dto';
 import { OrderValidation } from './order.validation';
 import { generateMessage } from 'src/common/utils/message.util';
-import WebResponse from 'src/models/web.model';
+import WebResponse, { Paging } from 'src/models/web.model';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -72,7 +75,10 @@ export class OrderController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(@Auth() user: User): Promise<WebResponse<any[]>> {
+  async findAll(
+    @Auth() user: User,
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info(
       'ORDER',
       'CONTROLLER',
@@ -82,7 +88,7 @@ export class OrderController {
         role: user.role,
       },
     );
-    const result = await this.orderService.findAll(user.id, user.role);
+    const result = await this.orderService.findAll(user.id, user.role, request);
     const message = generateMessage({ action: 'fetch', subject: 'orders' });
 
     this.loggerService.info(
@@ -90,13 +96,30 @@ export class OrderController {
       'CONTROLLER',
       'Orders fetched successfully',
       {
-        count: result.length,
+        count: result.data.length,
       },
     );
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+      paging: result.paging,
+    });
+  }
+
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RoleGuard)
+  @Roles('ADMIN')
+  async getStats(): Promise<WebResponse<any>> {
+    this.loggerService.info('ORDER', 'CONTROLLER', 'Fetch order stats request received');
+    const result = await this.orderService.getStats();
+
+    this.loggerService.info('ORDER', 'CONTROLLER', 'Order stats fetched successfully');
+    return this.responseService.success({
+      data: result,
+      status: HttpStatus.OK,
+      message: 'Order stats fetched successfully',
     });
   }
 

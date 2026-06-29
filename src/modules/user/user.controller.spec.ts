@@ -96,12 +96,11 @@ describe('UserController', () => {
 
   describe('list', () => {
     it('should return a list of users successfully', async () => {
-      const page = 1;
-      const limit = 10;
+      const request = { page: 1, size: 10 };
 
-      const response = await controller.list(mockUser as any, page, limit);
+      const response = await controller.list(mockUser as any, request);
 
-      expect(userService.list).toHaveBeenCalledWith(limit, page);
+      expect(userService.list).toHaveBeenCalledWith(request);
       expect(responseService.success).toHaveBeenCalled();
       expect(response.success).toBe(true);
       expect(response.data).toEqual(mockUsersListResponse.data);

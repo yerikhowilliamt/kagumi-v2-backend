@@ -68,7 +68,14 @@ describe('PaymentService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn(),
             },
+            $transaction: jest.fn((callback) => {
+              if (Array.isArray(callback)) {
+                return Promise.all(callback);
+              }
+              return callback();
+            }),
           },
         },
       ],
@@ -141,20 +148,22 @@ describe('PaymentService', () => {
 
   describe('findAll', () => {
     it('should return all payments for admin', async () => {
+      jest.spyOn(prismaService.payment, 'count').mockResolvedValue(1);
       jest.spyOn(prismaService.payment, 'findMany').mockResolvedValue([mockPayment] as any);
 
-      const result = await service.findAll(99, 'ADMIN');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(99, 'ADMIN', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.payment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: {} }),
       );
     });
 
     it('should return user specific payments for user', async () => {
+      jest.spyOn(prismaService.payment, 'count').mockResolvedValue(1);
       jest.spyOn(prismaService.payment, 'findMany').mockResolvedValue([mockPayment] as any);
 
-      const result = await service.findAll(2, 'USER');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(2, 'USER', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.payment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { userId: 2 } }),
       );

@@ -27,7 +27,10 @@ describe('CustomOrderOptionController', () => {
           provide: CustomOrderOptionService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockOption),
-            findAll: jest.fn().mockResolvedValue([mockOption]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockOption],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockOption),
             update: jest.fn().mockResolvedValue(mockOption),
             remove: jest.fn().mockResolvedValue(mockOption),
@@ -84,9 +87,10 @@ describe('CustomOrderOptionController', () => {
 
   describe('findAll', () => {
     it('should return list of custom order options', async () => {
-      const response = await controller.findAll();
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(request);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(request);
       expect(response.success).toBe(true);
       expect(response.data).toHaveLength(1);
     });

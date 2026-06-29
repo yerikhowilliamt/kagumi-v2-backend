@@ -27,11 +27,13 @@ import WebResponse from 'src/models/web.model';
 import { UserResponse } from 'src/models/user.model';
 import { generateMessage } from 'src/common/utils/message.util';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ZodBody } from 'src/common/validation/validation.decorator';
+import { ZodBody, ZodQuery } from 'src/common/validation/validation.decorator';
 import { UserValidation } from './user.validation';
 import { UpdateProfileRequest } from './dto/update-profile.dto';
 import { UpdatePasswordRequest } from './dto/update-password.dto';
 import { Response } from 'express';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
 
 @ApiTags('Users')
 @Controller('users')
@@ -49,16 +51,14 @@ export class UserController {
   @Roles('ADMIN')
   async list(
     @Auth() user: User,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
   ): Promise<WebResponse<UserResponse[]>> {
     this.loggerService.info('USER', 'CONTROLLER', 'Fetching users initiated', {
       performed_by: user.email,
-      limit: limit,
-      page: page,
+      request,
     });
 
-    const result = await this.userService.list(limit, page);
+    const result = await this.userService.list(request);
     const message = generateMessage({ action: 'fetch', subject: 'user' });
 
     this.loggerService.info(
@@ -77,6 +77,22 @@ export class UserController {
       status: result.status,
       message,
       paging: result.paging,
+    });
+  }
+
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
+  @Roles('ADMIN')
+  async getStats(): Promise<WebResponse<any>> {
+    this.loggerService.info('USER', 'CONTROLLER', 'Fetch user stats request received');
+    const result = await this.userService.getStats();
+
+    this.loggerService.info('USER', 'CONTROLLER', 'User stats fetched successfully');
+    return this.responseService.success({
+      data: result,
+      status: HttpStatus.OK,
+      message: 'User stats fetched successfully',
     });
   }
 

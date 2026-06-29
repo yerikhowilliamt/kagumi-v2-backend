@@ -3,6 +3,9 @@ import { PrismaService } from 'src/common/prisma/prisma.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { CreateCustomOrderOptionDto } from './dto/create-custom-order-option.dto';
 import { UpdateCustomOrderOptionDto } from './dto/update-custom-order-option.dto';
+import { Prisma, CustomOrderOption } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class CustomOrderOptionService {
@@ -44,23 +47,53 @@ export class CustomOrderOptionService {
     return result;
   }
 
-  async findAll() {
-    this.loggerService.info('CUSTOM_ORDER_OPTION', 'SERVICE', 'Fetching all custom order options');
+  async findAll(request: PaginationRequest): Promise<PaginatedResponse<CustomOrderOption>> {
+    this.loggerService.info('CUSTOM_ORDER_OPTION', 'SERVICE', 'Fetching all custom order options', { request });
 
-    const options = await this.prismaService.customOrderOption.findMany({
-      include: {
-        product: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = (request.page - 1) * request.size;
+
+    const where: Prisma.CustomOrderOptionWhereInput = {};
+    if (request.search) {
+      where.label = {
+        contains: request.search,
+        mode: 'insensitive',
+      };
+    }
+
+    const orderBy: Prisma.CustomOrderOptionOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.createdAt = 'desc';
+    }
+
+    const [totalData, options] = await this.prismaService.$transaction([
+      this.prismaService.customOrderOption.count({ where }),
+      this.prismaService.customOrderOption.findMany({
+        where,
+        skip,
+        take: request.size,
+        include: {
+          product: true,
+        },
+        orderBy,
+      }),
+    ]);
 
     this.loggerService.info('CUSTOM_ORDER_OPTION', 'SERVICE', 'Custom order options fetched', {
       count: options.length,
+      totalData,
     });
 
-    return options;
+    return {
+      data: options,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number) {

@@ -7,7 +7,9 @@ import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreateCategoryRequest } from './dto/create-category.dto';
 import { UpdateCategoryRequest } from './dto/update-category.dto';
-import { Category } from 'src/generated/prisma/client';
+import { Category, Prisma } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class CategoryService {
@@ -58,25 +60,63 @@ export class CategoryService {
     return category;
   }
 
-  async findAll(): Promise<Category[]> {
+  async findAll(request: PaginationRequest): Promise<PaginatedResponse<Category>> {
     this.loggerService.info(
       'CATEGORY',
       'SERVICE',
       'Fetching all categories initiated',
+      { request },
     );
-    const categories = await this.prismaService.category.findMany({
-      include: {
-        parent: true,
-        children: true,
-      },
-    });
+
+    const skip = (request.page - 1) * request.size;
+    
+    // Konfigurasi Filter
+    const where: Prisma.CategoryWhereInput = {};
+    if (request.search) {
+      where.name = {
+        contains: request.search,
+        mode: 'insensitive',
+      };
+    }
+
+    // Konfigurasi Sorting
+    const orderBy: Prisma.CategoryOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.id = 'desc'; // default
+    }
+
+    const [totalData, categories] = await this.prismaService.$transaction([
+      this.prismaService.category.count({ where }),
+      this.prismaService.category.findMany({
+        where,
+        skip,
+        take: request.size,
+        orderBy,
+        include: {
+          parent: true,
+          children: true,
+        },
+      }),
+    ]);
+
     this.loggerService.info(
       'CATEGORY',
       'SERVICE',
       'All categories fetched successfully',
-      { count: categories.length },
+      { count: categories.length, totalData },
     );
-    return categories;
+
+    return {
+      data: categories,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number): Promise<Category> {

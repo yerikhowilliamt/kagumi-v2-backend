@@ -3,7 +3,9 @@ import { LoggerService } from 'src/common/logger/logger.service';
 import { PrismaService } from 'src/common/prisma/prisma.service';
 import { CreateProductRequest } from './dto/create-product.dto';
 import { UpdateProductRequest } from './dto/update-product.dto';
-import { Product } from 'src/generated/prisma/client';
+import { Product, Prisma } from 'src/generated/prisma/client';
+import { PaginatedResponse, PaginationRequest } from 'src/models/pagination.model';
+import { Paging } from 'src/models/web.model';
 
 @Injectable()
 export class ProductService {
@@ -55,24 +57,78 @@ export class ProductService {
     return product;
   }
 
-  async findAll(): Promise<Product[]> {
+  async findAll(request: PaginationRequest): Promise<PaginatedResponse<any>> {
     this.loggerService.info(
       'PRODUCT',
       'SERVICE',
       'Fetching all products initiated',
+      { request },
     );
-    const products = await this.prismaService.product.findMany({
-      include: {
-        category: true,
-      },
+
+    const skip = (request.page - 1) * request.size;
+    
+    // Konfigurasi Filter
+    const where: Prisma.ProductWhereInput = {};
+    if (request.search) {
+      where.name = {
+        contains: request.search,
+        mode: 'insensitive',
+      };
+    }
+
+    // Konfigurasi Sorting
+    const orderBy: Prisma.ProductOrderByWithRelationInput = {};
+    if (request.sortBy) {
+      orderBy[request.sortBy] = request.sortOrder;
+    } else {
+      orderBy.id = 'desc'; // default
+    }
+
+    const [totalData, products] = await this.prismaService.$transaction([
+      this.prismaService.product.count({ where }),
+      this.prismaService.product.findMany({
+        where,
+        skip,
+        take: request.size,
+        orderBy,
+        include: {
+          category: true,
+          reviews: {
+            select: { rating: true },
+          },
+        },
+      }),
+    ]);
+
+    const productsWithRating = products.map((product) => {
+      const totalReviews = product.reviews.length;
+      const averageRating = totalReviews > 0
+        ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
+      
+      const { reviews, ...rest } = product;
+      return {
+        ...rest,
+        averageRating,
+      };
     });
+
     this.loggerService.info(
       'PRODUCT',
       'SERVICE',
       'All products fetched successfully',
-      { count: products.length },
+      { count: productsWithRating.length, totalData },
     );
-    return products;
+
+    return {
+      data: productsWithRating,
+      paging: new Paging({
+        size: request.size,
+        totalData,
+        totalPage: Math.ceil(totalData / request.size),
+        currentPage: request.page,
+      }),
+    };
   }
 
   async findById(id: number): Promise<Product> {

@@ -70,7 +70,12 @@ describe('OrderService', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn(),
+            $transaction: jest.fn(async (callback: any) => {
+              if (Array.isArray(callback)) {
+                return Promise.all(callback);
+              }
+              return callback(prismaService);
+            }),
             product: {
               findUnique: jest.fn(),
               update: jest.fn(),
@@ -82,6 +87,7 @@ describe('OrderService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn(),
             },
             orderItem: {
               create: jest.fn(),
@@ -132,8 +138,11 @@ describe('OrderService', () => {
         .mockResolvedValue(mockProduct);
       jest
         .spyOn(prismaService, '$transaction')
-        .mockImplementation(async (cb: any) => {
-          return cb(prismaService);
+        .mockImplementation(async (callback: any) => {
+          if (Array.isArray(callback)) {
+            return Promise.all(callback);
+          }
+          return callback(prismaService);
         });
       jest
         .spyOn(prismaService.order, 'create')
@@ -162,11 +171,14 @@ describe('OrderService', () => {
   describe('findAll', () => {
     it('should return all orders for admin', async () => {
       jest
+        .spyOn(prismaService.order, 'count')
+        .mockResolvedValue(1);
+      jest
         .spyOn(prismaService.order, 'findMany')
         .mockResolvedValue([mockOrder]);
 
-      const result = await service.findAll(1, 'ADMIN');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(1, 'ADMIN', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: {} }),
       );
@@ -174,11 +186,14 @@ describe('OrderService', () => {
 
     it('should return user specific orders for user role', async () => {
       jest
+        .spyOn(prismaService.order, 'count')
+        .mockResolvedValue(1);
+      jest
         .spyOn(prismaService.order, 'findMany')
         .mockResolvedValue([mockOrder]);
 
-      const result = await service.findAll(2, 'USER');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(2, 'USER', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { userId: 2 } }),
       );
@@ -230,8 +245,11 @@ describe('OrderService', () => {
         .mockResolvedValue(mockOrder);
       jest
         .spyOn(prismaService, '$transaction')
-        .mockImplementation(async (cb: any) => {
-          return cb(prismaService);
+        .mockImplementation(async (callback: any) => {
+          if (Array.isArray(callback)) {
+            return Promise.all(callback);
+          }
+          return callback(prismaService);
         });
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
       jest

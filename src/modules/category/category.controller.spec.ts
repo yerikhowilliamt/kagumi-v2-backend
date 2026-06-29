@@ -26,7 +26,10 @@ describe('CategoryController', () => {
           provide: CategoryService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockCategory),
-            findAll: jest.fn().mockResolvedValue([mockCategory]),
+            findAll: jest.fn().mockResolvedValue({
+              data: [mockCategory],
+              paging: { currentPage: 1, totalPage: 1, totalData: 1, size: 10 }
+            }),
             findById: jest.fn().mockResolvedValue(mockCategory),
             update: jest.fn().mockResolvedValue(mockCategory),
             remove: jest.fn().mockResolvedValue(mockCategory),
@@ -81,9 +84,10 @@ describe('CategoryController', () => {
 
   describe('findAll', () => {
     it('should return list of categories', async () => {
-      const response = await controller.findAll();
+      const request = { page: 1, size: 10 };
+      const response = await controller.findAll(request);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(request);
       expect(response.success).toBe(true);
       expect(response.data).toHaveLength(1);
     });

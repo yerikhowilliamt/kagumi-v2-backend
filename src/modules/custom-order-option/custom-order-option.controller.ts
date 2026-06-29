@@ -23,10 +23,12 @@ import { UpdateCustomOrderOptionDto } from './dto/update-custom-order-option.dto
 import { CustomOrderOptionValidation } from './custom-order-option.validation';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Custom Orders')
 @Controller('custom-orders')
-@UseGuards(JwtAccessAuthGuard)
 export class CustomOrderOptionController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -36,7 +38,7 @@ export class CustomOrderOptionController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async create(
     @ZodBody(CustomOrderOptionValidation.CREATE) request: CreateCustomOrderOptionDto,
@@ -72,16 +74,16 @@ export class CustomOrderOptionController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
-  @Roles('ADMIN', 'USER')
-  async findAll(): Promise<WebResponse<any[]>> {
+  async findAll(
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info(
       'CUSTOM_ORDER_OPTION',
       'CONTROLLER',
       'Fetch all custom order options request received',
     );
 
-    const result = await this.customOrderOptionService.findAll();
+    const result = await this.customOrderOptionService.findAll(request);
     const message = generateMessage({ action: 'fetch', subject: 'custom order options' });
 
     this.loggerService.info(
@@ -89,21 +91,21 @@ export class CustomOrderOptionController {
       'CONTROLLER',
       'Custom order options fetched successfully',
       {
-        count: result.length,
+        count: result.data.length,
       },
     );
 
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
-  @Roles('ADMIN', 'USER')
   async findById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<WebResponse<any>> {
@@ -133,7 +135,7 @@ export class CustomOrderOptionController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -165,7 +167,7 @@ export class CustomOrderOptionController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async remove(
     @Param('id', ParseIntPipe) id: number,

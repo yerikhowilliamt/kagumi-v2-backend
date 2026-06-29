@@ -14,7 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { LoggerService } from 'src/common/logger/logger.service';
 import { ResponseService } from 'src/helpers/response/response.service';
-import { ZodBody } from 'src/common/validation/validation.decorator';
+import { Paging } from 'src/models/web.model';
 import { CreateProductRequest } from './dto/create-product.dto';
 import { UpdateProductRequest } from './dto/update-product.dto';
 import { ProductValidation } from './product.validation';
@@ -24,10 +24,12 @@ import { Product } from 'src/generated/prisma/client';
 import { JwtAccessAuthGuard } from '../auth/guards/jwt-access.guard';
 import { RoleGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/role.decorator';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery, ZodBody } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Products')
 @Controller('products')
-@UseGuards(JwtAccessAuthGuard)
 export class ProductController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -37,7 +39,7 @@ export class ProductController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async create(
     @ZodBody(ProductValidation.CREATE) request: CreateProductRequest,
@@ -66,25 +68,29 @@ export class ProductController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(): Promise<WebResponse<Product[]>> {
+  async findAll(
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info(
       'PRODUCT',
       'CONTROLLER',
       'Fetch all products request received',
     );
-    const result = await this.productService.findAll();
+    const result = await this.productService.findAll(request);
     const message = generateMessage({ action: 'fetch', subject: 'product' });
 
     this.loggerService.info(
       'PRODUCT',
       'CONTROLLER',
       'Products fetched successfully',
-      { count: result.length },
+      { count: result.data.length },
     );
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 
@@ -117,7 +123,7 @@ export class ProductController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -147,7 +153,7 @@ export class ProductController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async remove(
     @Param('id', ParseIntPipe) id: number,

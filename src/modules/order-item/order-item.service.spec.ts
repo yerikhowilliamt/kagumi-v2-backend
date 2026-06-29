@@ -77,7 +77,12 @@ describe('OrderItemService', () => {
         {
           provide: PrismaService,
           useValue: {
-            $transaction: jest.fn(),
+            $transaction: jest.fn(async (callback: any) => {
+              if (Array.isArray(callback)) {
+                return Promise.all(callback);
+              }
+              return callback(prismaService);
+            }),
             product: {
               findUnique: jest.fn(),
               update: jest.fn(),
@@ -93,6 +98,7 @@ describe('OrderItemService', () => {
               findUnique: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn(),
             },
           },
         },
@@ -170,7 +176,12 @@ describe('OrderItemService', () => {
     it('should successfully create order item and recalculate total price', async () => {
       jest.spyOn(prismaService.order, 'findUnique').mockResolvedValue(mockOrder as any);
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
-      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (callback: any) => {
+        if (Array.isArray(callback)) {
+          return Promise.all(callback);
+        }
+        return callback(prismaService);
+      });
       jest.spyOn(prismaService.orderItem, 'create').mockResolvedValue(mockOrderItem as any);
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
       jest.spyOn(prismaService.product, 'updateMany').mockResolvedValue({ count: 1 } as any);
@@ -193,10 +204,11 @@ describe('OrderItemService', () => {
 
   describe('findAll', () => {
     it('should filter items by user orders if role is USER', async () => {
+      jest.spyOn(prismaService.orderItem, 'count').mockResolvedValue(1);
       jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
 
-      const result = await service.findAll(2, 'USER');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(2, 'USER', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.orderItem.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { order: { userId: 2 } },
@@ -205,10 +217,11 @@ describe('OrderItemService', () => {
     });
 
     it('should not filter items if role is ADMIN', async () => {
+      jest.spyOn(prismaService.orderItem, 'count').mockResolvedValue(1);
       jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([mockOrderItem] as any);
 
-      const result = await service.findAll(1, 'ADMIN');
-      expect(result).toHaveLength(1);
+      const result = await service.findAll(1, 'ADMIN', { page: 1, size: 10 });
+      expect(result.data).toHaveLength(1);
       expect(prismaService.orderItem.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {},
@@ -249,7 +262,12 @@ describe('OrderItemService', () => {
     it('should successfully update item quantity, adjust stocks and recalculate total price', async () => {
       jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(mockOrderItem as any);
       jest.spyOn(prismaService.product, 'findUnique').mockResolvedValue(mockProduct as any);
-      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (callback: any) => {
+        if (Array.isArray(callback)) {
+          return Promise.all(callback);
+        }
+        return callback(prismaService);
+      });
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
       jest.spyOn(prismaService.product, 'updateMany').mockResolvedValue({ count: 1 } as any);
       jest.spyOn(prismaService.orderItem, 'update').mockResolvedValue({ ...mockOrderItem, quantity: 3 } as any);
@@ -266,7 +284,12 @@ describe('OrderItemService', () => {
   describe('remove', () => {
     it('should successfully remove item, restore stock and recalculate total price', async () => {
       jest.spyOn(prismaService.orderItem, 'findUnique').mockResolvedValue(mockOrderItem as any);
-      jest.spyOn(prismaService, '$transaction').mockImplementation(async (cb: any) => cb(prismaService));
+      jest.spyOn(prismaService, '$transaction').mockImplementation(async (callback: any) => {
+        if (Array.isArray(callback)) {
+          return Promise.all(callback);
+        }
+        return callback(prismaService);
+      });
       jest.spyOn(prismaService.product, 'update').mockResolvedValue({} as any);
       jest.spyOn(prismaService.orderItem, 'delete').mockResolvedValue(mockOrderItem as any);
       jest.spyOn(prismaService.orderItem, 'findMany').mockResolvedValue([] as any);

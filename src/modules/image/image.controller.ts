@@ -26,10 +26,12 @@ import { CreateImageRequest } from './dto/create-image.dto';
 import { generateMessage } from 'src/common/utils/message.util';
 import WebResponse from 'src/models/web.model';
 import { ImageValidation } from './image.validation';
+import { PaginationRequest } from 'src/models/pagination.model';
+import { PaginationValidation } from 'src/common/validation/pagination.validation';
+import { ZodQuery } from 'src/common/validation/validation.decorator';
 
 @ApiTags('Images')
 @Controller('images')
-@UseGuards(JwtAccessAuthGuard)
 export class ImageController {
   constructor(
     private readonly loggerService: LoggerService,
@@ -39,7 +41,7 @@ export class ImageController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   @UseInterceptors(
     FileFieldsInterceptor([{ name: 'image', maxCount: 1 }, { name: 'images' }]),
@@ -102,13 +104,15 @@ export class ImageController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async findAll(): Promise<WebResponse<any[]>> {
+  async findAll(
+    @ZodQuery(PaginationValidation.QUERY) request: PaginationRequest,
+  ): Promise<WebResponse<any[]>> {
     this.loggerService.info(
       'IMAGE',
       'CONTROLLER',
       'Fetch all images request received',
     );
-    const result = await this.imageService.findAll();
+    const result = await this.imageService.findAll(request);
     const message = generateMessage({ action: 'fetch', subject: 'images' });
 
     this.loggerService.info(
@@ -116,14 +120,16 @@ export class ImageController {
       'CONTROLLER',
       'Images fetched successfully',
       {
-        count: result.length,
+        count: result.data.length,
       },
     );
 
     return this.responseService.success({
-      data: result,
+      data: result.data,
       status: HttpStatus.OK,
       message,
+
+      paging: result.paging,
     });
   }
 
@@ -157,7 +163,7 @@ export class ImageController {
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   @UseInterceptors(
     FileFieldsInterceptor([{ name: 'image', maxCount: 1 }, { name: 'images' }]),
@@ -231,7 +237,7 @@ export class ImageController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(RoleGuard)
+  @UseGuards(JwtAccessAuthGuard, RoleGuard)
   @Roles('ADMIN')
   async remove(@Param('id') idParam: string): Promise<WebResponse<any>> {
     this.loggerService.info(
